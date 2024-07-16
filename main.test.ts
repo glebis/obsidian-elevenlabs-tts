@@ -1,6 +1,9 @@
-import { App, TFile } from 'obsidian';
+import { App, TFile, PluginManifest } from 'obsidian';
 import ElevenLabsTTSPlugin from './main';
 import * as uuid from 'uuid';
+
+// Explicitly import Jest types and functions
+import { jest, describe, beforeEach, it, expect } from '@jest/globals';
 
 // Mock uuid
 jest.mock('uuid', () => ({
@@ -8,53 +11,68 @@ jest.mock('uuid', () => ({
 }));
 
 // Mock fetch
-global.fetch = jest.fn();
+global.fetch = jest.fn() as jest.Mock<Promise<Response>>;
 
 // Mock Notice
-global.Notice = jest.fn();
+const mockNotice = jest.fn();
+(global as any).Notice = mockNotice;
 
 describe('ElevenLabsTTSPlugin', () => {
   let app: App;
   let plugin: ElevenLabsTTSPlugin;
+  let manifest: PluginManifest;
 
   beforeEach(() => {
     // Mock Obsidian's App
     app = {
       vault: {
         adapter: {
-          writeBinary: jest.fn().mockResolvedValue(undefined),
-          read: jest.fn().mockResolvedValue('Existing content'),
-          append: jest.fn().mockResolvedValue(undefined),
+          writeBinary: jest.fn<Promise<void>, [string, ArrayBuffer]>().mockResolvedValue(undefined),
+          read: jest.fn<Promise<string>, [string]>().mockResolvedValue('Existing content'),
+          append: jest.fn<Promise<void>, [string, string]>().mockResolvedValue(undefined),
         },
-        read: jest.fn().mockResolvedValue('Existing content'),
-        modify: jest.fn().mockResolvedValue(undefined),
-        getAbstractFileByPath: jest.fn().mockReturnValue({ path: 'test-path' }),
+        read: jest.fn<Promise<string>, [string]>().mockResolvedValue('Existing content'),
+        modify: jest.fn<Promise<void>, [string, string]>().mockResolvedValue(undefined),
+        getAbstractFileByPath: jest.fn<TFile | null, [string]>().mockReturnValue({ path: 'test-path' }),
       },
       workspace: {
-        getActiveFile: jest.fn(),
+        getActiveFile: jest.fn<TFile | null, []>(),
       },
     } as unknown as App;
 
+    // Create a valid PluginManifest
+    manifest = {
+      id: 'test-plugin',
+      name: 'Test Plugin',
+      version: '1.0.0',
+      minAppVersion: '0.15.0',
+      author: 'Test Author',
+      description: 'A test plugin',
+    };
+
     // Initialize plugin
-    plugin = new ElevenLabsTTSPlugin(app, {});
+    plugin = new ElevenLabsTTSPlugin(app, manifest);
 
     // Mock plugin methods
-    plugin.loadData = jest.fn().mockResolvedValue({});
-    plugin.saveData = jest.fn().mockResolvedValue(undefined);
+    plugin.loadData = jest.fn<Promise<any>, []>().mockResolvedValue({});
+    plugin.saveData = jest.fn<Promise<void>, [any]>().mockResolvedValue(undefined);
 
     // Initialize settings
     plugin.settings = {
       apiKey: 'test-key',
       selectedVoice: 'Rachel',
       outputFolder: 'test-folder',
-      attachToDaily: false
+      attachToDaily: false,
     };
 
     // Mock document.createElement
     document.createElement = jest.fn().mockReturnValue({
       src: '',
       play: jest.fn(),
-    });
+    }) as unknown as HTMLAudioElement;
+
+    // Clear all mocks before each test
+    jest.clearAllMocks();
   });
 
   describe('Settings', () => {
@@ -65,7 +83,7 @@ describe('ElevenLabsTTSPlugin', () => {
         apiKey: '',
         selectedVoice: 'Rachel',
         outputFolder: '',
-        attachToDaily: false
+        attachToDaily: false,
       });
     });
 
@@ -74,7 +92,7 @@ describe('ElevenLabsTTSPlugin', () => {
         apiKey: 'test-api-key',
         selectedVoice: 'test-voice',
         outputFolder: 'test-folder',
-        attachToDaily: true
+        attachToDaily: true,
       };
       plugin.loadData = jest.fn().mockResolvedValue(mockData);
 
@@ -88,7 +106,7 @@ describe('ElevenLabsTTSPlugin', () => {
         apiKey: 'new-test-key',
         selectedVoice: 'new-test-voice',
         outputFolder: 'new-test-folder',
-        attachToDaily: true
+        attachToDaily: true,
       };
       await plugin.saveSettings();
       expect(plugin.saveData).toHaveBeenCalledWith(plugin.settings);
@@ -98,9 +116,9 @@ describe('ElevenLabsTTSPlugin', () => {
   describe('Audio Generation', () => {
     it('should generate audio file', async () => {
       const mockArrayBuffer = new ArrayBuffer(8);
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as jest.Mock<Promise<Response>>).mockResolvedValueOnce({
         arrayBuffer: jest.fn().mockResolvedValue(mockArrayBuffer),
-      });
+      } as unknown as Response);
 
       await plugin.generateAudio('Test text');
 
@@ -120,7 +138,7 @@ describe('ElevenLabsTTSPlugin', () => {
         mockArrayBuffer
       );
 
-      expect(global.Notice).toHaveBeenCalledWith('Audio file created: mocked-uuid-value.mp3');
+      expect(mockNotice).toHaveBeenCalledWith('Audio file created: mocked-uuid-value.mp3');
     });
 
     it('should show error when API key is not set', async () => {
@@ -128,24 +146,24 @@ describe('ElevenLabsTTSPlugin', () => {
 
       await plugin.generateAudio('Test text');
 
-      expect(global.Notice).toHaveBeenCalledWith('API key not set. Please set your API key in the plugin settings.');
+      expect(mockNotice).toHaveBeenCalledWith('API key not set. Please set your API key in the plugin settings.');
       expect(global.fetch).not.toHaveBeenCalled();
     });
 
     it('should handle API errors', async () => {
-      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('API Error'));
+      (global.fetch as jest.Mock<Promise<Response>>).mockRejectedValueOnce(new Error('API Error'));
 
       await plugin.generateAudio('Test text');
 
       expect(console.error).toHaveBeenCalledWith('Error generating audio:', expect.any(Error));
-      expect(global.Notice).toHaveBeenCalledWith('Error generating audio file');
+      expect(mockNotice).toHaveBeenCalledWith('Error generating audio file');
     });
   });
 
   describe('Daily Note Attachment', () => {
     it('should attach audio file to daily note', async () => {
       const mockFile = { path: 'daily-note.md' } as TFile;
-      (app.workspace.getActiveFile as jest.Mock).mockReturnValue(mockFile);
+      (app.workspace.getActiveFile as jest.Mock<TFile | null>).mockReturnValue(mockFile);
 
       await plugin.attachToDaily('audio-file.mp3');
 
@@ -153,16 +171,16 @@ describe('ElevenLabsTTSPlugin', () => {
         'daily-note.md',
         '\n\n![[audio-file.mp3]]'
       );
-      expect(global.Notice).toHaveBeenCalledWith('Audio file attached to daily note');
+      expect(mockNotice).toHaveBeenCalledWith('Audio file attached to daily note');
     });
 
     it('should show error when no active daily note is found', async () => {
-      (app.workspace.getActiveFile as jest.Mock).mockReturnValue(null);
+      (app.workspace.getActiveFile as jest.Mock<TFile | null>).mockReturnValue(null);
 
       await plugin.attachToDaily('audio-file.mp3');
 
       expect(app.vault.adapter.append).not.toHaveBeenCalled();
-      expect(global.Notice).toHaveBeenCalledWith('No active daily note found');
+      expect(mockNotice).toHaveBeenCalledWith('No active daily note found');
     });
   });
 });

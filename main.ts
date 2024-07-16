@@ -1,6 +1,4 @@
-const moment = require('moment');
-
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { App, Plugin, PluginSettingTab, Setting, Notice, TFile } from 'obsidian';
 import { v4 as uuid } from "uuid";
 
 interface ElevenLabsTTSSettings {
@@ -39,7 +37,7 @@ export default class ElevenLabsTTSPlugin extends Plugin {
         this.addCommand({
             id: 'read-with-eleventy',
             name: 'Read with Eleventy',
-            editorCallback: (editor: Editor, view: MarkdownView) => {
+            editorCallback: (editor, view) => {
                 this.generateAudio(editor.getSelection());
             }
         });
@@ -63,33 +61,37 @@ export default class ElevenLabsTTSPlugin extends Plugin {
 
         try {
             const voiceSettings: VoiceSettings = {
-                stability: 0.5, // Replace with your desired value
-                similarity_boost: 0.5, // Replace with your desired value
+                stability: 0.5,
+                similarity_boost: 0.5,
             };
 
             const data: TextToSpeechRequest = {
-                model_id: "eleven_multilingual_v2", // Replace with your desired model ID
+                model_id: "eleven_multilingual_v2",
                 text: text,
                 voice_settings: voiceSettings,
             };
 
-            const requestOptions = {
+            const requestOptions: RequestInit = {
                 method: "POST",
                 headers: {
-                    Accept: "audio/mpeg",
-                    "xi-api-key": this.settings.apiKey,
-                    "Content-Type": "application/json",
+                    'Accept': "audio/mpeg",
+                    'xi-api-key': this.settings.apiKey,
+                    'Content-Type': "application/json",
                 },
                 body: JSON.stringify(data),
             };
 
             const response = await fetch(`${BASE_URL}/text-to-speech/${this.settings.selectedVoice}`, requestOptions);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             const audioData = await response.arrayBuffer();
 
             const fileName = `${uuid()}.mp3`;
             const filePath = `${this.settings.outputFolder}/${fileName}`;
 
-            // Write the audio data to a file using Obsidian's API
             await this.app.vault.adapter.writeBinary(filePath, audioData);
 
             new Notice(`Audio file created: ${fileName}`);
@@ -98,12 +100,11 @@ export default class ElevenLabsTTSPlugin extends Plugin {
                 await this.attachToDaily(filePath);
             }
 
-            // Play the audio using the <audio> element
+            // Play the audio
             const audioBlob = new Blob([audioData], { type: 'audio/mpeg' });
             const audioUrl = URL.createObjectURL(audioBlob);
 
-            const audioElement = document.createElement('audio');
-            audioElement.src = audioUrl;
+            const audioElement = new Audio(audioUrl);
             audioElement.play();
         } catch (error) {
             console.error('Error generating audio:', error);
@@ -114,9 +115,7 @@ export default class ElevenLabsTTSPlugin extends Plugin {
     async attachToDaily(filePath: string) {
         const dailyNote = this.app.workspace.getActiveFile();
         if (dailyNote) {
-            const content = await this.app.vault.read(dailyNote);
-            const updatedContent = `${content}\n\n![[${filePath}]]`;
-            await this.app.vault.modify(dailyNote, updatedContent);
+            await this.app.vault.adapter.append(dailyNote.path, `\n\n![[${filePath}]]`);
             new Notice('Audio file attached to daily note');
         } else {
             new Notice('No active daily note found');
@@ -132,7 +131,7 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
         this.plugin = plugin;
     }
 
-    async display(): Promise<void> {
+    display(): void {
         const {containerEl} = this;
 
         containerEl.empty();
@@ -146,25 +145,14 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.apiKey = value;
                     await this.plugin.saveSettings();
-                }).inputEl.type = "password"
-      // Set input type to password
-                );
+                }));
 
         new Setting(containerEl)
             .setName('Voice')
             .setDesc('Select the voice to use')
             .addDropdown(async (dropdown) => {
-                const requestOptions = {
-                    method: "GET",
-                    headers: {
-                        "xi-api-key": this.plugin.settings.apiKey,
-                    },
-                };
-
-                const voices = await fetch(`${BASE_URL}/voices`, requestOptions);
-                const voicesData = await voices.json();
-
-                voicesData.voices.forEach((voice: any) => {
+                const voices = await this.fetchVoices();
+                voices.forEach((voice: any) => {
                     dropdown.addOption(voice.voice_id, voice.name);
                 });
                 dropdown.setValue(this.plugin.settings.selectedVoice);
@@ -194,5 +182,22 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
                     this.plugin.settings.attachToDaily = value;
                     await this.plugin.saveSettings();
                 }));
+    }
+
+    async fetchVoices(): Promise<any[]> {
+        try {
+            const response = await fetch(`${BASE_URL}/voices`, {
+                method: "GET",
+                headers: {
+                    "xi-api-key": this.plugin.settings.apiKey,
+                },
+            });
+            const data = await response.json();
+            return data.voices || [];
+        } catch (error) {
+            console.error('Error fetching voices:', error);
+            new Notice('Error fetching voices');
+            return [];
+        }
     }
 }

@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node", "jest"],
+    "esModuleInterop": true,
+    "isolatedModules": false,
+    "jsx": "react"
+  },
+  "include": ["**/*.ts", "**/*.test.ts", "__mocks__/**/*"],
+  "exclude": ["node_modules"]
+}

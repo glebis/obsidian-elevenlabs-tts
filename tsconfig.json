@@ -17,19 +17,10 @@
       "ES6",
       "ES7"
     ],
+    "types": ["node"],
     "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "typeRoots": [
-      "./node_modules/@types",
-      "./src/@types"
-    ]
+    "esModuleInterop": true
   },
-  "include": [
-    "**/*.ts"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+  "include": ["**/*.ts"],
+  "exclude": ["**/*.test.ts", "__mocks__/**/*"]
 }
