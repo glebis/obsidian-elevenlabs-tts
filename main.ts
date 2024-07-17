@@ -1,4 +1,4 @@
-import { App, Plugin, PluginSettingTab, Setting, Notice, TFile, TFolder, FuzzySuggestModal, TextComponent, FuzzyMatch } from 'obsidian';
+import { App, Plugin, PluginSettingTab, Setting, Notice, TFile, TFolder, FuzzySuggestModal, TextComponent, FuzzyMatch, ButtonComponent } from 'obsidian';
 import moment from 'moment';
 
 interface ElevenLabsTTSSettings {
@@ -157,7 +157,7 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
 
         let languageInfoSetting: Setting;
 
-        new Setting(containerEl)
+        const voiceSetting = new Setting(containerEl)
             .setName('Voice')
             .setDesc('Select the voice to use')
             .addDropdown(async (dropdown) => {
@@ -171,11 +171,18 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
                     this.plugin.settings.selectedVoice = value;
                     await this.plugin.saveSettings();
                     this.updateLanguageInfo(value, languageInfoSetting);
+                    this.updatePreviewButton(value, previewButton);
                 });
-                
+            
                 // Set initial language info
                 this.updateLanguageInfo(this.plugin.settings.selectedVoice, languageInfoSetting);
             });
+
+        const previewButton = new ButtonComponent(voiceSetting.controlEl)
+            .setButtonText('Play')
+            .onClick(() => this.playVoicePreview(this.plugin.settings.selectedVoice));
+
+        this.updatePreviewButton(this.plugin.settings.selectedVoice, previewButton);
 
         // Add a new setting to display language information
         languageInfoSetting = new Setting(containerEl)
@@ -249,6 +256,8 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
         affiliateDiv.style.textAlign = 'center';
     }
 
+    voices: any[] = [];
+
     async fetchVoices(): Promise<any[]> {
         try {
             const response = await fetch(`${BASE_URL}/voices`, {
@@ -258,8 +267,8 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
                 },
             });
             const data = await response.json();
-            const filteredVoices = (data.voices || []).filter((voice: any) => !voice.name.includes("Academy Award"));
-            return filteredVoices;
+            this.voices = (data.voices || []).filter((voice: any) => !voice.name.includes("Academy Award"));
+            return this.voices;
         } catch (error) {
             console.error('Error fetching voices:', error);
             new Notice('Error fetching voices');
@@ -277,6 +286,21 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
             const languageInfo = this.getLanguageInfo(voiceId);
             const textComponent = languageInfoSetting.components[0] as TextComponent;
             textComponent.setValue(languageInfo);
+        }
+    }
+
+    updatePreviewButton(voiceId: string, previewButton: ButtonComponent): void {
+        const voice = this.voices.find(v => v.voice_id === voiceId);
+        previewButton.setDisabled(!voice || !voice.preview_url);
+    }
+
+    async playVoicePreview(voiceId: string): Promise<void> {
+        const voice = this.voices.find(v => v.voice_id === voiceId);
+        if (voice && voice.preview_url) {
+            const audio = new Audio(voice.preview_url);
+            await audio.play();
+        } else {
+            new Notice('No preview available for this voice');
         }
     }
 }
