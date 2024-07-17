@@ -1,4 +1,4 @@
-import { App, Plugin, PluginSettingTab, Setting, Notice, TFile, TFolder, FuzzySuggestModal, TextComponent, FuzzyMatch, ButtonComponent, setIcon } from 'obsidian';
+import { App, Plugin, PluginSettingTab, Setting, Notice, TFile, TFolder, FuzzySuggestModal, TextComponent, FuzzyMatch, ButtonComponent, setIcon, Modal } from 'obsidian';
 import moment from 'moment';
 
 interface ElevenLabsTTSSettings {
@@ -8,6 +8,12 @@ interface ElevenLabsTTSSettings {
     attachToDaily: boolean;
     stability: number;
     similarityBoost: number;
+}
+
+interface SoundGenerationRequest {
+    text: string;
+    duration_seconds: number;
+    prompt_influence?: number;
 }
 
 const DEFAULT_SETTINGS: ElevenLabsTTSSettings = {
@@ -43,6 +49,14 @@ export default class ElevenLabsTTSPlugin extends Plugin {
             name: 'Read with Eleventy',
             editorCallback: (editor, view) => {
                 this.generateAudio(editor.getSelection());
+            }
+        });
+
+        this.addCommand({
+            id: 'generate-sound',
+            name: 'Generate Sound',
+            callback: () => {
+                new SoundGenerationModal(this.app, this).open();
             }
         });
 
@@ -126,6 +140,108 @@ export default class ElevenLabsTTSPlugin extends Plugin {
         } else {
             new Notice('No active daily note found');
         }
+    }
+
+    async generateSound(request: SoundGenerationRequest): Promise<void> {
+        if (!this.settings.apiKey) {
+            new Notice('API key not set. Please set your API key in the plugin settings.');
+            return;
+        }
+
+        try {
+            const requestOptions: RequestInit = {
+                method: "POST",
+                headers: {
+                    'Accept': "audio/mpeg",
+                    'xi-api-key': this.settings.apiKey,
+                    'Content-Type': "application/json",
+                },
+                body: JSON.stringify(request),
+            };
+
+            const response = await fetch(`${BASE_URL}/sound-generation`, requestOptions);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const audioData = await response.arrayBuffer();
+
+            const date = moment().format('YYYYMMDD HH:mm');
+            const truncatedText = request.text.slice(0, 20).replace(/[^a-zA-Z0-9]/g, '_');
+            const fileName = `${date}_${truncatedText}_sound.mp3`;
+            const filePath = `${this.settings.outputFolder}/${fileName}`;
+
+            await this.app.vault.adapter.writeBinary(filePath, audioData);
+
+            new Notice(`Sound file created: ${fileName}`);
+
+            // Play the audio
+            const audioBlob = new Blob([audioData], { type: 'audio/mpeg' });
+            const audioUrl = URL.createObjectURL(audioBlob);
+
+            const audioElement = new Audio(audioUrl);
+            audioElement.play();
+        } catch (error) {
+            console.error('Error generating sound:', error);
+            new Notice('Error generating sound file');
+        }
+    }
+}
+
+class SoundGenerationModal extends Modal {
+    plugin: ElevenLabsTTSPlugin;
+    text: string;
+    duration: number;
+
+    constructor(app: App, plugin: ElevenLabsTTSPlugin) {
+        super(app);
+        this.plugin = plugin;
+    }
+
+    onOpen() {
+        const { contentEl } = this;
+
+        contentEl.createEl('h2', { text: 'Generate Sound' });
+
+        new Setting(contentEl)
+            .setName('Text')
+            .addText(text => text
+                .setPlaceholder('Enter text for sound generation')
+                .onChange(value => this.text = value));
+
+        new Setting(contentEl)
+            .setName('Duration (seconds)')
+            .addText(text => text
+                .setPlaceholder('Enter duration (0.5 - 22)')
+                .setValue('5')
+                .onChange(value => {
+                    const duration = parseFloat(value);
+                    if (!isNaN(duration) && duration >= 0.5 && duration <= 22) {
+                        this.duration = duration;
+                    }
+                }));
+
+        new Setting(contentEl)
+            .addButton(btn => btn
+                .setButtonText('Generate')
+                .setCta()
+                .onClick(() => {
+                    if (this.text && this.duration) {
+                        this.plugin.generateSound({
+                            text: this.text,
+                            duration_seconds: this.duration
+                        });
+                        this.close();
+                    } else {
+                        new Notice('Please enter both text and a valid duration.');
+                    }
+                }));
+    }
+
+    onClose() {
+        const { contentEl } = this;
+        contentEl.empty();
     }
 }
 
