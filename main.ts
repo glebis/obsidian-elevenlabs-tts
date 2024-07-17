@@ -7,6 +7,7 @@ interface ElevenLabsTTSSettings {
     outputFolder: string;
     attachmentOption: 'current' | 'daily' | 'none';
     dailyNoteFormat: string;
+    dailyNoteSubheader: string;
     stability: number;
     similarityBoost: number;
     playAudioInObsidian: boolean;
@@ -24,6 +25,7 @@ const DEFAULT_SETTINGS: ElevenLabsTTSSettings = {
     outputFolder: '',
     attachmentOption: 'current',
     dailyNoteFormat: 'YYYY-MM-DD',
+    dailyNoteSubheader: '## Audio',
     stability: 0.5,
     similarityBoost: 0.5,
     playAudioInObsidian: true
