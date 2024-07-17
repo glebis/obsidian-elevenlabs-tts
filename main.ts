@@ -178,14 +178,22 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
                         this.plugin.settings.outputFolder = value;
                         await this.plugin.saveSettings();
                     });
-            })
+                
+                // Add button after text component is created
+                this.addButton(containerEl, text);
+            });
+
+    }
+
+    private addButton(containerEl: HTMLElement, textComponent: TextComponent) {
+        new Setting(containerEl)
             .addButton(button => button
                 .setButtonText('Select folder')
                 .onClick(() => {
                     new FolderSuggestModal(this.app, (folder) => {
                         this.plugin.settings.outputFolder = folder.path;
                         this.plugin.saveSettings();
-                        text.setValue(folder.path);
+                        textComponent.setValue(folder.path);
                     }).open();
                 }));
 
