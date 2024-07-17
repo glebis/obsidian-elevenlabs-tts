@@ -107,9 +107,46 @@ describe('ElevenLabsTTSPlugin', () => {
         selectedVoice: 'new-test-voice',
         outputFolder: 'new-test-folder',
         attachToDaily: true,
+        stability: 0.7,
+        similarityBoost: 0.8,
       };
       await plugin.saveSettings();
       expect(plugin.saveData).toHaveBeenCalledWith(plugin.settings);
+    });
+  });
+
+  describe('Voice Settings', () => {
+    it('should use default voice settings when not specified', async () => {
+      (global.fetch as jest.Mock<Promise<Response>>).mockResolvedValueOnce({
+        arrayBuffer: jest.fn().mockResolvedValue(new ArrayBuffer(8)),
+      } as unknown as Response);
+
+      await plugin.generateAudio('Test text');
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        'https://api.elevenlabs.io/v1/text-to-speech/Rachel',
+        expect.objectContaining({
+          body: expect.stringContaining('"stability":0.5,"similarity_boost":0.5'),
+        })
+      );
+    });
+
+    it('should use custom voice settings when specified', async () => {
+      plugin.settings.stability = 0.8;
+      plugin.settings.similarityBoost = 0.9;
+
+      (global.fetch as jest.Mock<Promise<Response>>).mockResolvedValueOnce({
+        arrayBuffer: jest.fn().mockResolvedValue(new ArrayBuffer(8)),
+      } as unknown as Response);
+
+      await plugin.generateAudio('Test text');
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        'https://api.elevenlabs.io/v1/text-to-speech/Rachel',
+        expect.objectContaining({
+          body: expect.stringContaining('"stability":0.8,"similarity_boost":0.9'),
+        })
+      );
     });
   });
 
