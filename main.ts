@@ -176,6 +176,14 @@ export default class ElevenLabsTTSPlugin extends Plugin {
 
             new Notice(`Sound file created: ${fileName}`);
 
+            // Add the file to the current note
+            const activeFile = this.app.workspace.getActiveFile();
+            if (activeFile) {
+                const fileContent = await this.app.vault.read(activeFile);
+                const updatedContent = fileContent + `\n\n![[${fileName}]]`;
+                await this.app.vault.modify(activeFile, updatedContent);
+            }
+
             // Play the audio
             const audioBlob = new Blob([audioData], { type: 'audio/mpeg' });
             const audioUrl = URL.createObjectURL(audioBlob);
@@ -193,10 +201,13 @@ class SoundGenerationModal extends Modal {
     plugin: ElevenLabsTTSPlugin;
     text: string;
     duration: number;
+    textComponent: TextComponent;
+    durationComponent: TextComponent;
 
-    constructor(app: App, plugin: ElevenLabsTTSPlugin) {
+    constructor(app: App, plugin: ElevenLabsTTSPlugin, initialText: string = '') {
         super(app);
         this.plugin = plugin;
+        this.text = initialText;
     }
 
     onOpen() {
@@ -206,21 +217,29 @@ class SoundGenerationModal extends Modal {
 
         new Setting(contentEl)
             .setName('Text')
-            .addText(text => text
-                .setPlaceholder('Enter text for sound generation')
-                .onChange(value => this.text = value));
+            .addText(text => {
+                this.textComponent = text;
+                text.setValue(this.text)
+                    .setPlaceholder('Enter text for sound generation')
+                    .onChange(value => this.text = value);
+            });
 
         new Setting(contentEl)
             .setName('Duration (seconds)')
-            .addText(text => text
-                .setPlaceholder('Enter duration (0.5 - 22)')
-                .setValue('5')
-                .onChange(value => {
-                    const duration = parseFloat(value);
-                    if (!isNaN(duration) && duration >= 0.5 && duration <= 22) {
-                        this.duration = duration;
-                    }
-                }));
+            .addText(text => {
+                this.durationComponent = text;
+                text.setPlaceholder('Enter duration (0.5 - 22)')
+                    .setValue('5')
+                    .onChange(value => {
+                        let duration = parseFloat(value);
+                        if (!isNaN(duration)) {
+                            if (duration > 22) duration = 22;
+                            if (duration < 0.5) duration = 0.5;
+                            this.duration = duration;
+                            this.durationComponent.setValue(duration.toString());
+                        }
+                    });
+            });
 
         new Setting(contentEl)
             .addButton(btn => btn
