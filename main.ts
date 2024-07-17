@@ -236,7 +236,8 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
                 },
             });
             const data = await response.json();
-            return data.voices || [];
+            const filteredVoices = (data.voices || []).filter((voice: any) => !voice.name.includes("Academy Award"));
+            return filteredVoices;
         } catch (error) {
             console.error('Error fetching voices:', error);
             new Notice('Error fetching voices');
