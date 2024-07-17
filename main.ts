@@ -145,7 +145,7 @@ export default class ElevenLabsTTSPlugin extends Plugin {
         try {
             const moment = (window as any).moment;
             const dailyNoteFileName = moment().format(this.settings.dailyNoteFormat) + '.md';
-            const dailyNotePath = `${this.app.vault.configDir}/daily/${dailyNoteFileName}`;
+            const dailyNotePath = dailyNoteFileName;
             
             console.log(`Attempting to attach to daily note: ${dailyNotePath}`);
             
