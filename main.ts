@@ -155,7 +155,6 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        let languageInfoSetting: Setting;
         let previewButton: ButtonComponent;
         let audio: HTMLAudioElement | null = null;
 
@@ -172,7 +171,7 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
                 dropdown.onChange(async (value) => {
                     this.plugin.settings.selectedVoice = value;
                     await this.plugin.saveSettings();
-                    this.updateLanguageInfo(value, languageInfoSetting);
+                    this.updateVoiceInfo(value, voiceSetting);
                     this.updatePreviewButton(value, previewButton);
                     if (audio) {
                         audio.pause();
@@ -181,8 +180,8 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
                     setIcon(previewButton.buttonEl, 'play');
                 });
             
-                // Set initial language info
-                this.updateLanguageInfo(this.plugin.settings.selectedVoice, languageInfoSetting);
+                // Set initial voice info
+                this.updateVoiceInfo(this.plugin.settings.selectedVoice, voiceSetting);
             });
 
         previewButton = new ButtonComponent(voiceSetting.controlEl)
@@ -198,12 +197,8 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
 
         this.updatePreviewButton(this.plugin.settings.selectedVoice, previewButton);
 
-        // Add a new setting to display voice characteristics
-        languageInfoSetting = new Setting(containerEl)
-            .setName('Voice Characteristics')
-            .setDesc('Characteristics of the selected voice');
-
-        const characteristicsEl = languageInfoSetting.descEl.createDiv();
+        // Add voice characteristics directly under the dropdown and play button
+        const characteristicsEl = voiceSetting.descEl.createDiv();
         characteristicsEl.setText(this.getVoiceCharacteristics(this.plugin.settings.selectedVoice));
 
         new Setting(containerEl)
@@ -310,13 +305,11 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
         return 'Voice characteristics not available';
     }
 
-    updateLanguageInfo(voiceId: string, languageInfoSetting: Setting): void {
-        if (languageInfoSetting) {
-            const voiceCharacteristics = this.getVoiceCharacteristics(voiceId);
-            const characteristicsEl = languageInfoSetting.descEl.querySelector('div');
-            if (characteristicsEl) {
-                characteristicsEl.setText(voiceCharacteristics);
-            }
+    updateVoiceInfo(voiceId: string, voiceSetting: Setting): void {
+        const voiceCharacteristics = this.getVoiceCharacteristics(voiceId);
+        const characteristicsEl = voiceSetting.descEl.querySelector('div');
+        if (characteristicsEl) {
+            characteristicsEl.setText(voiceCharacteristics);
         }
     }
 
