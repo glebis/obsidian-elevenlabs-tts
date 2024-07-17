@@ -426,18 +426,38 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
                 .onChange(async (value: 'current' | 'daily' | 'none') => {
                     this.plugin.settings.attachmentOption = value;
                     await this.plugin.saveSettings();
+                    this.updateDailyNotePreview();
                 }));
 
         new Setting(containerEl)
             .setName('Daily Note Format')
             .setDesc('Format for daily note filenames (e.g., YYYY-MM-DD)')
-            .addText(text => text
-                .setPlaceholder('YYYY-MM-DD')
-                .setValue(this.plugin.settings.dailyNoteFormat)
-                .onChange(async (value) => {
-                    this.plugin.settings.dailyNoteFormat = value;
-                    await this.plugin.saveSettings();
-                }));
+            .addText(text => {
+                text.setPlaceholder('YYYY-MM-DD')
+                    .setValue(this.plugin.settings.dailyNoteFormat)
+                    .onChange(async (value) => {
+                        this.plugin.settings.dailyNoteFormat = value;
+                        await this.plugin.saveSettings();
+                        this.updateDailyNotePreview();
+                    });
+            });
+
+        const dailyNotePreviewEl = containerEl.createEl('div', { cls: 'daily-note-preview' });
+        dailyNotePreviewEl.style.marginLeft = '40px';
+        dailyNotePreviewEl.style.fontSize = '12px';
+        dailyNotePreviewEl.style.color = 'var(--text-muted)';
+
+        this.updateDailyNotePreview = () => {
+            if (this.plugin.settings.attachmentOption === 'daily') {
+                const previewDate = moment().format(this.plugin.settings.dailyNoteFormat);
+                dailyNotePreviewEl.setText(`Preview: ${previewDate}.md`);
+                dailyNotePreviewEl.style.display = 'block';
+            } else {
+                dailyNotePreviewEl.style.display = 'none';
+            }
+        };
+
+        this.updateDailyNotePreview();
 
         new Setting(containerEl)
             .setName('Play Audio in Obsidian')
