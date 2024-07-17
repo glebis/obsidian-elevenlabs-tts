@@ -1,8 +1,10 @@
 # TODO List for ElevenLabs TTS Plugin
 
-- [ ] Implement proper folder selection (export class FolderSuggest extends TextInputSuggest<TFolder>)
+- [x] Implement proper folder selection (Completed: Using FolderSuggestModal)
 - [ ] Create more flexible config for adding audio file
-- [ ] Allow customization of voice settings (stability and similarity boost)
+- [x] Allow customization of voice settings (stability and similarity boost)
 - [ ] Make playing generated audio directly in Obsidian optional
 - [ ] Add check to ensure response is actually an audio file and output error message instead of storing it as a file
 - [x] Implement more readable filename (Completed: Using date and beginning of text)
+- [ ] Add option to customize audio file naming format
+- [ ] Implement error handling for API rate limits and quota exceeded
