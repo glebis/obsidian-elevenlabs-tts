@@ -121,8 +121,10 @@ export default class ElevenLabsTTSPlugin extends Plugin {
 
             new Notice(`Audio file created: ${fileName}`);
 
-            if (this.settings.attachToDaily) {
+            if (this.settings.attachmentOption === 'daily') {
                 await this.attachToDaily(filePath);
+            } else if (this.settings.attachmentOption === 'current') {
+                await this.attachToCurrent(filePath);
             }
 
             // Play the audio if the setting is enabled
@@ -156,6 +158,16 @@ export default class ElevenLabsTTSPlugin extends Plugin {
             new Notice('Audio file attached to daily note');
         } else {
             new Notice('Error: Could not find or create daily note');
+        }
+    }
+
+    async attachToCurrent(filePath: string) {
+        const activeFile = this.app.workspace.getActiveFile();
+        if (activeFile) {
+            await this.app.vault.append(activeFile, `\n\n![[${filePath}]]`);
+            new Notice('Audio file attached to current note');
+        } else {
+            new Notice('Error: No active note found');
         }
     }
 
