@@ -12,10 +12,10 @@ jest.mock('uuid', () => ({
 
 // Mock fetch
 global.fetch = jest.fn().mockResolvedValue({
-  arrayBuffer: jest.fn().mockResolvedValue(new ArrayBuffer(8)),
+  arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)),
   ok: true,
   status: 200,
-}) as unknown as jest.Mock<Promise<Response>>;
+}) as jest.Mock<Promise<Response>>;
 
 // Mock Notice
 const mockNotice = jest.fn();
@@ -58,8 +58,8 @@ describe('ElevenLabsTTSPlugin', () => {
     plugin = new ElevenLabsTTSPlugin(app, manifest);
 
     // Mock plugin methods
-    plugin.loadData = jest.fn().mockResolvedValue({});
-    plugin.saveData = jest.fn().mockResolvedValue(undefined);
+    plugin.loadData = jest.fn().mockResolvedValue({}) as jest.MockedFunction<typeof plugin.loadData>;
+    plugin.saveData = jest.fn().mockResolvedValue(undefined) as jest.MockedFunction<typeof plugin.saveData>;
 
     // Initialize settings
     plugin.settings = {
@@ -69,16 +69,13 @@ describe('ElevenLabsTTSPlugin', () => {
       attachToDaily: false,
       stability: 0.5,
       similarityBoost: 0.5,
-      audioFileNameFormat: '{voiceName} - {text}',
-      audioFileNamePrefix: '',
-      audioFileNameSuffix: '',
     };
 
     // Mock document.createElement
     document.createElement = jest.fn().mockReturnValue({
       src: '',
       play: jest.fn(),
-    } as unknown as HTMLAudioElement);
+    }) as jest.MockedFunction<typeof document.createElement>;
 
     // Clear all mocks before each test
     jest.clearAllMocks();
@@ -86,7 +83,7 @@ describe('ElevenLabsTTSPlugin', () => {
 
   describe('Settings', () => {
     it('should load default settings', async () => {
-      plugin.loadData = jest.fn().mockResolvedValue({});
+      plugin.loadData = jest.fn().mockResolvedValue({}) as jest.MockedFunction<typeof plugin.loadData>;
       await plugin.loadSettings();
       expect(plugin.settings).toEqual({
         apiKey: '',
@@ -113,7 +110,7 @@ describe('ElevenLabsTTSPlugin', () => {
         audioFileNamePrefix: 'prefix_',
         audioFileNameSuffix: '_suffix',
       };
-      plugin.loadData = jest.fn().mockResolvedValue(mockData);
+      plugin.loadData = jest.fn().mockResolvedValue(mockData) as jest.MockedFunction<typeof plugin.loadData>;
 
       await plugin.loadSettings();
 
@@ -128,9 +125,6 @@ describe('ElevenLabsTTSPlugin', () => {
         attachToDaily: true,
         stability: 0.7,
         similarityBoost: 0.8,
-        audioFileNameFormat: '{text} by {voiceName}',
-        audioFileNamePrefix: 'prefix_',
-        audioFileNameSuffix: '_suffix',
       };
       await plugin.saveSettings();
       expect(plugin.saveData).toHaveBeenCalledWith(plugin.settings);
@@ -140,7 +134,7 @@ describe('ElevenLabsTTSPlugin', () => {
   describe('Voice Settings', () => {
     it('should use default voice settings when not specified', async () => {
       (global.fetch as jest.Mock<Promise<Response>>).mockResolvedValueOnce({
-        arrayBuffer: jest.fn().mockResolvedValue(new ArrayBuffer(8)),
+        arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)),
       } as unknown as Response);
 
       await plugin.generateAudio('Test text');
@@ -181,8 +175,7 @@ describe('ElevenLabsTTSPlugin', () => {
 
       await plugin.generateAudio('Test text');
 
-      expect(global.fetch).toHaveBeenCal
-ledWith(
+      expect(global.fetch).toHaveBeenCalledWith(
         'https://api.elevenlabs.io/v1/text-to-speech/Rachel',
         expect.objectContaining({
           method: 'POST',
@@ -223,7 +216,7 @@ ledWith(
   describe('Daily Note Attachment', () => {
     it('should attach audio file to daily note', async () => {
       const mockFile = { path: 'daily-note.md' } as TFile;
-      (app.workspace.getActiveFile as jest.Mock<TFile | null>).mockReturnValue(mockFile);
+      (app.workspace.getActiveFile as jest.Mock).mockReturnValue(mockFile);
 
       await plugin.attachToDaily('audio-file.mp3');
 
@@ -235,7 +228,7 @@ ledWith(
     });
 
     it('should show error when no active daily note is found', async () => {
-      (app.workspace.getActiveFile as jest.Mock<TFile | null>).mockReturnValue(null);
+      (app.workspace.getActiveFile as jest.Mock).mockReturnValue(null);
 
       await plugin.attachToDaily('audio-file.mp3');
 
