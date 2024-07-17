@@ -131,10 +131,12 @@ export default class ElevenLabsTTSPlugin extends Plugin {
 
 class ElevenLabsTTSSettingTab extends PluginSettingTab {
     plugin: ElevenLabsTTSPlugin;
+    voiceLanguages: Map<string, string[]>;
 
     constructor(app: App, plugin: ElevenLabsTTSPlugin) {
         super(app, plugin);
         this.plugin = plugin;
+        this.voiceLanguages = new Map();
     }
 
     display(): void {
@@ -160,13 +162,23 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
                 const voices = await this.fetchVoices();
                 voices.forEach((voice: any) => {
                     dropdown.addOption(voice.voice_id, voice.name);
+                    this.voiceLanguages.set(voice.voice_id, voice.labels.language);
                 });
                 dropdown.setValue(this.plugin.settings.selectedVoice);
                 dropdown.onChange(async (value) => {
                     this.plugin.settings.selectedVoice = value;
                     await this.plugin.saveSettings();
+                    this.updateLanguageInfo(value);
                 });
             });
+
+        // Add a new setting to display language information
+        new Setting(containerEl)
+            .setName('Supported Languages')
+            .setDesc('Languages supported by the selected voice')
+            .addText(text => text
+                .setDisabled(true)
+                .setValue(this.getLanguageInfo(this.plugin.settings.selectedVoice)));
 
         new Setting(containerEl)
             .setName('Output Folder')
@@ -242,6 +254,18 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
             console.error('Error fetching voices:', error);
             new Notice('Error fetching voices');
             return [];
+        }
+    }
+
+    getLanguageInfo(voiceId: string): string {
+        const languages = this.voiceLanguages.get(voiceId);
+        return languages ? languages.join(', ') : 'Language information not available';
+    }
+
+    updateLanguageInfo(voiceId: string): void {
+        const languageInfoSetting = this.containerEl.querySelector('.language-info') as HTMLInputElement;
+        if (languageInfoSetting) {
+            languageInfoSetting.value = this.getLanguageInfo(voiceId);
         }
     }
 }
