@@ -299,17 +299,23 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
             if (voice.use_case) characteristics.push(`Use case: ${voice.use_case}`);
             if (voice.labels?.gender) characteristics.push(`Gender: ${voice.labels.gender}`);
             if (voice.labels?.age) characteristics.push(`Age: ${voice.labels.age}`);
-            if (voice.labels?.accent) characteristics.push(`Accent: ${voice.labels.accent}`);
             return characteristics.length > 0 ? characteristics.join(', ') : 'No specific characteristics available';
         }
         return 'Voice characteristics not available';
     }
 
     updateVoiceInfo(voiceId: string, voiceSetting: Setting): void {
+        const voice = this.voices.find(v => v.voice_id === voiceId);
         const voiceCharacteristics = this.getVoiceCharacteristics(voiceId);
         const characteristicsEl = voiceSetting.descEl.querySelector('div');
         if (characteristicsEl) {
-            characteristicsEl.setText(voiceCharacteristics);
+            characteristicsEl.empty();
+            const nameSpan = characteristicsEl.createSpan({text: `${voice?.name || 'Unknown'} `});
+            if (voice?.labels?.accent) {
+                nameSpan.createSpan({text: `(${voice.labels.accent})`, cls: 'voice-accent'});
+            }
+            characteristicsEl.createDiv({text: voiceCharacteristics, cls: 'voice-characteristics'});
+            characteristicsEl.style.textAlign = 'right';
         }
     }
 

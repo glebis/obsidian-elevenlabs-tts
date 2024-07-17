@@ -14,3 +14,13 @@ If your plugin does not need CSS, delete this file.
 .elevenlabs-affiliate-link a:hover {
     color: var(--text-normal);
 }
+
+.voice-accent {
+    font-style: italic;
+    opacity: 0.8;
+}
+
+.voice-characteristics {
+    font-size: 0.9em;
+    color: var(--text-muted);
+}
