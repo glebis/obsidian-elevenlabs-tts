@@ -13,7 +13,9 @@ jest.mock('uuid', () => ({
 // Mock fetch
 global.fetch = jest.fn().mockResolvedValue({
   arrayBuffer: jest.fn().mockResolvedValue(new ArrayBuffer(8)),
-}) as jest.Mock;
+  ok: true,
+  status: 200,
+}) as unknown as jest.Mock<Promise<Response>>;
 
 // Mock Notice
 const mockNotice = jest.fn();
