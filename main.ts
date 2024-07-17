@@ -159,7 +159,19 @@ export default class ElevenLabsTTSPlugin extends Plugin {
             
             if (dailyNote instanceof TFile) {
                 console.log('Daily note found or created, appending audio file link...');
-                await this.app.vault.append(dailyNote, `\n\n![[${filePath}]]`);
+                const content = await this.app.vault.read(dailyNote);
+                const subheader = this.settings.dailyNoteSubheader;
+                let updatedContent: string;
+
+                if (content.includes(subheader)) {
+                    // If subheader exists, append the new item to the list
+                    updatedContent = content.replace(subheader, `${subheader}\n- ![[${filePath}]]`);
+                } else {
+                    // If subheader doesn't exist, add it with the new item
+                    updatedContent = `${content}\n\n${subheader}\n- ![[${filePath}]]`;
+                }
+
+                await this.app.vault.modify(dailyNote, updatedContent);
                 new Notice('Audio file attached to daily note');
             } else {
                 console.error('Error: dailyNote is not an instance of TFile');
@@ -454,6 +466,18 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
                     });
             });
 
+        new Setting(containerEl)
+            .setName('Daily Note Subheader')
+            .setDesc('Subheader for audio attachments in daily notes')
+            .addText(text => {
+                text.setPlaceholder('## Audio')
+                    .setValue(this.plugin.settings.dailyNoteSubheader)
+                    .onChange(async (value) => {
+                        this.plugin.settings.dailyNoteSubheader = value;
+                        await this.plugin.saveSettings();
+                    });
+            });
+
         const dailyNotePreviewEl = containerEl.createEl('div', { cls: 'daily-note-preview' });
         dailyNotePreviewEl.style.marginLeft = '40px';
         dailyNotePreviewEl.style.fontSize = '12px';
@@ -462,7 +486,7 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
         this.updateDailyNotePreview = () => {
             if (this.plugin.settings.attachmentOption === 'daily') {
                 const previewDate = moment().format(this.plugin.settings.dailyNoteFormat);
-                dailyNotePreviewEl.setText(`Preview: ${previewDate}.md`);
+                dailyNotePreviewEl.setText(`Preview: ${previewDate}.md\n${this.plugin.settings.dailyNoteSubheader}\n- [[audio_file.mp3]]`);
                 dailyNotePreviewEl.style.display = 'block';
             } else {
                 dailyNotePreviewEl.style.display = 'none';
