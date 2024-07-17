@@ -55,8 +55,9 @@ export default class ElevenLabsTTSPlugin extends Plugin {
         this.addCommand({
             id: 'generate-sound',
             name: 'Generate Sound',
-            callback: () => {
-                new SoundGenerationModal(this.app, this).open();
+            editorCallback: (editor, view) => {
+                const selectedText = editor.getSelection();
+                new SoundGenerationModal(this.app, this, selectedText).open();
             }
         });
 
