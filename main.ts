@@ -142,22 +142,32 @@ export default class ElevenLabsTTSPlugin extends Plugin {
     }
 
     async attachToDaily(filePath: string) {
-        const moment = (window as any).moment;
-        const dailyNoteFileName = moment().format(this.settings.dailyNoteFormat) + '.md';
-        const dailyNotePath = `${this.app.vault.configDir}/daily/${dailyNoteFileName}`;
-        
-        let dailyNote = this.app.vault.getAbstractFileByPath(dailyNotePath);
-        
-        if (!dailyNote) {
-            // Create the daily note if it doesn't exist
-            dailyNote = await this.app.vault.create(dailyNotePath, '');
-        }
-        
-        if (dailyNote instanceof TFile) {
-            await this.app.vault.append(dailyNote, `\n\n![[${filePath}]]`);
-            new Notice('Audio file attached to daily note');
-        } else {
-            new Notice('Error: Could not find or create daily note');
+        try {
+            const moment = (window as any).moment;
+            const dailyNoteFileName = moment().format(this.settings.dailyNoteFormat) + '.md';
+            const dailyNotePath = `${this.app.vault.configDir}/daily/${dailyNoteFileName}`;
+            
+            console.log(`Attempting to attach to daily note: ${dailyNotePath}`);
+            
+            let dailyNote = this.app.vault.getAbstractFileByPath(dailyNotePath);
+            
+            if (!dailyNote) {
+                console.log('Daily note not found, attempting to create...');
+                // Create the daily note if it doesn't exist
+                dailyNote = await this.app.vault.create(dailyNotePath, '');
+            }
+            
+            if (dailyNote instanceof TFile) {
+                console.log('Daily note found or created, appending audio file link...');
+                await this.app.vault.append(dailyNote, `\n\n![[${filePath}]]`);
+                new Notice('Audio file attached to daily note');
+            } else {
+                console.error('Error: dailyNote is not an instance of TFile');
+                new Notice('Error: Could not find or create daily note');
+            }
+        } catch (error) {
+            console.error('Error in attachToDaily:', error);
+            new Notice('Error attaching audio file to daily note');
         }
     }
 
