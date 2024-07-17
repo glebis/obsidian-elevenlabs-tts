@@ -123,10 +123,12 @@ export default class ElevenLabsTTSPlugin extends Plugin {
 
             new Notice(`Audio file created: ${fileName}`);
 
+            const textPreview = this.settings.outputTextPreview ? text.slice(0, 50) + (text.length > 50 ? '...' : '') : '';
+
             if (this.settings.attachmentOption === 'daily') {
-                await this.attachToDaily(filePath);
+                await this.attachToDaily(filePath, textPreview);
             } else if (this.settings.attachmentOption === 'current') {
-                await this.attachToCurrent(filePath);
+                await this.attachToCurrent(filePath, textPreview);
             }
 
             // Play the audio if the setting is enabled
@@ -143,7 +145,7 @@ export default class ElevenLabsTTSPlugin extends Plugin {
         }
     }
 
-    async attachToDaily(filePath: string) {
+    async attachToDaily(filePath: string, textPreview: string = '') {
         try {
             const moment = (window as any).moment;
             const dailyNoteFileName = moment().format(this.settings.dailyNoteFormat) + '.md';
@@ -165,12 +167,13 @@ export default class ElevenLabsTTSPlugin extends Plugin {
                 const subheader = this.settings.dailyNoteSubheader;
                 let updatedContent: string;
 
+                const newItem = textPreview ? `- ![[${filePath}]] (${textPreview})` : `- ![[${filePath}]]`;
                 if (content.includes(subheader)) {
                     // If subheader exists, append the new item to the list
-                    updatedContent = content.replace(subheader, `${subheader}\n- ![[${filePath}]]`);
+                    updatedContent = content.replace(subheader, `${subheader}\n${newItem}`);
                 } else {
                     // If subheader doesn't exist, add it with the new item
-                    updatedContent = `${content}\n\n${subheader}\n- ![[${filePath}]]`;
+                    updatedContent = `${content}\n\n${subheader}\n${newItem}`;
                 }
 
                 await this.app.vault.modify(dailyNote, updatedContent);
@@ -185,10 +188,11 @@ export default class ElevenLabsTTSPlugin extends Plugin {
         }
     }
 
-    async attachToCurrent(filePath: string) {
+    async attachToCurrent(filePath: string, textPreview: string = '') {
         const activeFile = this.app.workspace.getActiveFile();
         if (activeFile) {
-            await this.app.vault.append(activeFile, `\n\n![[${filePath}]]`);
+            const attachmentText = textPreview ? `\n\n![[${filePath}]] (${textPreview})` : `\n\n![[${filePath}]]`;
+            await this.app.vault.append(activeFile, attachmentText);
             new Notice('Audio file attached to current note');
         } else {
             new Notice('Error: No active note found');
@@ -504,6 +508,16 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
                 .setValue(this.plugin.settings.playAudioInObsidian)
                 .onChange(async (value) => {
                     this.plugin.settings.playAudioInObsidian = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('Output Text Preview')
+            .setDesc('Include a preview of the generated text or prompt in the attachment')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.outputTextPreview)
+                .onChange(async (value) => {
+                    this.plugin.settings.outputTextPreview = value;
                     await this.plugin.saveSettings();
                 }));
 
