@@ -1,4 +1,4 @@
-import { App, Plugin, PluginSettingTab, Setting, Notice, TFile, TFolder, FuzzySuggestModal, TextComponent, FuzzyMatch, ButtonComponent } from 'obsidian';
+import { App, Plugin, PluginSettingTab, Setting, Notice, TFile, TFolder, FuzzySuggestModal, TextComponent, FuzzyMatch, ButtonComponent, setIcon } from 'obsidian';
 import moment from 'moment';
 
 interface ElevenLabsTTSSettings {
@@ -156,6 +156,8 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
                 }));
 
         let languageInfoSetting: Setting;
+        let previewButton: ButtonComponent;
+        let audio: HTMLAudioElement | null = null;
 
         const voiceSetting = new Setting(containerEl)
             .setName('Voice')
@@ -172,15 +174,27 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                     this.updateLanguageInfo(value, languageInfoSetting);
                     this.updatePreviewButton(value, previewButton);
+                    if (audio) {
+                        audio.pause();
+                        audio = null;
+                    }
+                    setIcon(previewButton.buttonEl, 'play');
                 });
             
                 // Set initial language info
                 this.updateLanguageInfo(this.plugin.settings.selectedVoice, languageInfoSetting);
             });
 
-        const previewButton = new ButtonComponent(voiceSetting.controlEl)
-            .setButtonText('Play')
-            .onClick(() => this.playVoicePreview(this.plugin.settings.selectedVoice));
+        previewButton = new ButtonComponent(voiceSetting.controlEl)
+            .setIcon('play')
+            .onClick(() => {
+                if (audio && !audio.paused) {
+                    audio.pause();
+                    setIcon(previewButton.buttonEl, 'play');
+                } else {
+                    this.playVoicePreview(this.plugin.settings.selectedVoice, previewButton);
+                }
+            });
 
         this.updatePreviewButton(this.plugin.settings.selectedVoice, previewButton);
 
@@ -294,10 +308,20 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
         previewButton.setDisabled(!voice || !voice.preview_url);
     }
 
-    async playVoicePreview(voiceId: string): Promise<void> {
+    async playVoicePreview(voiceId: string, previewButton: ButtonComponent): Promise<void> {
         const voice = this.voices.find(v => v.voice_id === voiceId);
         if (voice && voice.preview_url) {
             const audio = new Audio(voice.preview_url);
+            setIcon(previewButton.buttonEl, 'pause');
+            
+            audio.onended = () => {
+                setIcon(previewButton.buttonEl, 'play');
+            };
+
+            audio.onpause = () => {
+                setIcon(previewButton.buttonEl, 'play');
+            };
+
             await audio.play();
         } else {
             new Notice('No preview available for this voice');
