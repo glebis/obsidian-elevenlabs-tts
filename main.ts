@@ -155,6 +155,8 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
+        let languageInfoSetting: Setting;
+
         new Setting(containerEl)
             .setName('Voice')
             .setDesc('Select the voice to use')
@@ -168,12 +170,15 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
                 dropdown.onChange(async (value) => {
                     this.plugin.settings.selectedVoice = value;
                     await this.plugin.saveSettings();
-                    this.updateLanguageInfo(value);
+                    this.updateLanguageInfo(value, languageInfoSetting);
                 });
+                
+                // Set initial language info
+                this.updateLanguageInfo(this.plugin.settings.selectedVoice, languageInfoSetting);
             });
 
         // Add a new setting to display language information
-        new Setting(containerEl)
+        languageInfoSetting = new Setting(containerEl)
             .setName('Supported Languages')
             .setDesc('Languages supported by the selected voice')
             .addText(text => text
@@ -262,10 +267,10 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
         return languages ? languages.join(', ') : 'Language information not available';
     }
 
-    updateLanguageInfo(voiceId: string): void {
-        const languageInfoSetting = this.containerEl.querySelector('.language-info') as HTMLInputElement;
+    updateLanguageInfo(voiceId: string, languageInfoSetting: Setting): void {
         if (languageInfoSetting) {
-            languageInfoSetting.value = this.getLanguageInfo(voiceId);
+            const languageInfo = this.getLanguageInfo(voiceId);
+            languageInfoSetting.components[0].setValue(languageInfo);
         }
     }
 }
