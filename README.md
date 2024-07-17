@@ -7,7 +7,7 @@ The ElevenLabs TTS Plugin for Obsidian allows you to generate high-quality audio
 - Generate audio files from selected text in Obsidian
 - Choose from a variety of voices provided by ElevenLabs
 - Save generated audio files to a specified folder in your Obsidian vault
-- Automatically attach generated audio files to your daily note (optional)
+- Automatically attach generated audio files to current note (optional)
 - Play generated audio directly in Obsidian
 
 ## Installation
@@ -35,9 +35,11 @@ The plugin settings can be accessed from the Obsidian settings panel. You can co
 ## TODO
 
 - [ ] Proper folder selection (export class FolderSuggest extends TextInputSuggest<TFolder>)
-- [ ] Fix Daily note not being added
+- [ ] More flexible config for adding audio file
 - [ ] Customize voice settings (stability and similarity boost)
 - [ ] Play generated audio directly in Obsidian should be optional
+- [ ] Check if response is actually audio file and output error message instead of storing it as a file
+- [ ] More readable filename
 
 ## Contributions
 
