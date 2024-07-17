@@ -8,6 +8,7 @@ interface ElevenLabsTTSSettings {
     attachToDaily: boolean;
     stability: number;
     similarityBoost: number;
+    playAudioInObsidian: boolean;
 }
 
 interface SoundGenerationRequest {
@@ -22,7 +23,8 @@ const DEFAULT_SETTINGS: ElevenLabsTTSSettings = {
     outputFolder: '',
     attachToDaily: false,
     stability: 0.5,
-    similarityBoost: 0.5
+    similarityBoost: 0.5,
+    playAudioInObsidian: true
 }
 
 const BASE_URL = "https://api.elevenlabs.io/v1";
