@@ -1,4 +1,4 @@
-import { App, Plugin, PluginSettingTab, Setting, Notice, TFile } from 'obsidian';
+import { App, Plugin, PluginSettingTab, Setting, Notice, TFile, TFolder, FuzzySuggestModal } from 'obsidian';
 import moment from 'moment';
 
 interface ElevenLabsTTSSettings {
@@ -173,7 +173,34 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.outputFolder = value;
                     await this.plugin.saveSettings();
+                }))
+            .addButton(button => button
+                .setButtonText('Choose')
+                .onClick(() => {
+                    new FolderSuggestModal(this.app, (folder) => {
+                        this.plugin.settings.outputFolder = folder.path;
+                        this.plugin.saveSettings();
+                        this.display();
+                    }).open();
                 }));
+
+    class FolderSuggestModal extends FuzzySuggestModal<TFolder> {
+        constructor(app: App, private onChoose: (folder: TFolder) => void) {
+            super(app);
+        }
+
+        getItems(): TFolder[] {
+            return this.app.vault.getAllLoadedFiles().filter((f): f is TFolder => f instanceof TFolder);
+        }
+
+        getItemText(folder: TFolder): string {
+            return folder.path;
+        }
+
+        onChooseItem(folder: TFolder, evt: MouseEvent | KeyboardEvent): void {
+            this.onChoose(folder);
+        }
+    }
 
         new Setting(containerEl)
             .setName('Attach to Daily Note')
