@@ -199,13 +199,10 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
             .addButton(button => button
                 .setButtonText('Select')
                 .onClick(() => {
-                    new FolderSuggestModal(this.app, (folder: TFolder) => {
+                    new FolderSuggestModal(this.app, async (folder: TFolder) => {
                         this.plugin.settings.outputFolder = folder.path;
-                        this.plugin.saveSettings();
-                        const textComponent = containerEl.querySelector('input[type="text"]') as HTMLInputElement;
-                        if (textComponent) {
-                            textComponent.value = folder.path;
-                        }
+                        await this.plugin.saveSettings();
+                        this.display(); // Refresh the entire settings tab
                     }).open();
                 }));
 
