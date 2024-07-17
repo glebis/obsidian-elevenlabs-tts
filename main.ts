@@ -178,24 +178,20 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
                         this.plugin.settings.outputFolder = value;
                         await this.plugin.saveSettings();
                     });
-                
-                // Add button after text component is created
-                this.addButton(containerEl, text);
-            });
-
-    }
-
-    private addButton(containerEl: HTMLElement, textComponent: TextComponent) {
-        new Setting(containerEl)
+            })
             .addButton(button => button
-                .setButtonText('Select folder')
+                .setButtonText('Select')
                 .onClick(() => {
                     new FolderSuggestModal(this.app, (folder) => {
                         this.plugin.settings.outputFolder = folder.path;
                         this.plugin.saveSettings();
-                        textComponent.setValue(folder.path);
+                        const textComponent = containerEl.querySelector('input[type="text"]') as HTMLInputElement;
+                        if (textComponent) {
+                            textComponent.value = folder.path;
+                        }
                     }).open();
                 }));
+    }
 
         new Setting(containerEl)
             .setName('Voice Stability')
