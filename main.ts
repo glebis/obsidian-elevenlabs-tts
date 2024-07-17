@@ -128,9 +128,9 @@ export default class ElevenLabsTTSPlugin extends Plugin {
             const textPreview = this.settings.outputTextPreview ? text.slice(0, 50) + (text.length > 50 ? '...' : '') : '';
 
             if (this.settings.attachmentOption === 'daily') {
-                await this.attachToDaily(filePath, textPreview);
+                await this.attachToDaily(filePath, textPreview, text);
             } else if (this.settings.attachmentOption === 'current') {
-                await this.attachToCurrent(filePath, textPreview);
+                await this.attachToCurrent(filePath, textPreview, text);
             }
 
             // Play the audio if the setting is enabled
@@ -147,7 +147,7 @@ export default class ElevenLabsTTSPlugin extends Plugin {
         }
     }
 
-    async attachToDaily(filePath: string, textPreview: string = '') {
+    async attachToDaily(filePath: string, textPreview: string = '', fullText: string = '') {
         try {
             const moment = (window as any).moment;
             const dailyNoteFileName = moment().format(this.settings.dailyNoteFormat) + '.md';
@@ -169,7 +169,7 @@ export default class ElevenLabsTTSPlugin extends Plugin {
                 const subheader = this.settings.dailyNoteSubheader;
                 let updatedContent: string;
 
-                const newItem = textPreview ? `- ![[${filePath}]] (${textPreview})` : `- ![[${filePath}]]`;
+                const newItem = `${fullText}\n![[${filePath}]]`;
                 if (content.includes(subheader)) {
                     // If subheader exists, append the new item to the list
                     updatedContent = content.replace(subheader, `${subheader}\n${newItem}`);
@@ -190,10 +190,10 @@ export default class ElevenLabsTTSPlugin extends Plugin {
         }
     }
 
-    async attachToCurrent(filePath: string, textPreview: string = '') {
+    async attachToCurrent(filePath: string, textPreview: string = '', fullText: string = '') {
         const activeFile = this.app.workspace.getActiveFile();
         if (activeFile) {
-            const attachmentText = textPreview ? `\n\n![[${filePath}]] (${textPreview})` : `\n\n![[${filePath}]]`;
+            const attachmentText = `\n\n${fullText}\n![[${filePath}]]`;
             await this.app.vault.append(activeFile, attachmentText);
             new Notice('Audio file attached to current note');
         } else {
