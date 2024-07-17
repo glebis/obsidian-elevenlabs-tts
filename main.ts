@@ -239,6 +239,14 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
                     this.plugin.settings.attachToDaily = value;
                     await this.plugin.saveSettings();
                 }));
+
+        // Add affiliate link
+        const affiliateDiv = containerEl.createDiv();
+        affiliateDiv.addClass('elevenlabs-affiliate-link');
+        affiliateDiv.innerHTML = "Don't have an account? <a href='https://elevenlabs.io/?from=partneralvarado9322' target='_blank'>Sign up using this affiliate link</a>";
+        affiliateDiv.style.fontSize = '12px';
+        affiliateDiv.style.marginTop = '20px';
+        affiliateDiv.style.textAlign = 'center';
     }
 
     async fetchVoices(): Promise<any[]> {
