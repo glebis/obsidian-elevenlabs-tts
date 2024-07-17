@@ -63,6 +63,11 @@ describe('ElevenLabsTTSPlugin', () => {
       selectedVoice: 'Rachel',
       outputFolder: 'test-folder',
       attachToDaily: false,
+      stability: 0.5,
+      similarityBoost: 0.5,
+      audioFileNameFormat: '{voiceName} - {text}',
+      audioFileNamePrefix: '',
+      audioFileNameSuffix: '',
     };
 
     // Mock document.createElement
@@ -84,6 +89,11 @@ describe('ElevenLabsTTSPlugin', () => {
         selectedVoice: 'Rachel',
         outputFolder: '',
         attachToDaily: false,
+        stability: 0.5,
+        similarityBoost: 0.5,
+        audioFileNameFormat: '{voiceName} - {text}',
+        audioFileNamePrefix: '',
+        audioFileNameSuffix: '',
       });
     });
 
@@ -93,6 +103,11 @@ describe('ElevenLabsTTSPlugin', () => {
         selectedVoice: 'test-voice',
         outputFolder: 'test-folder',
         attachToDaily: true,
+        stability: 0.7,
+        similarityBoost: 0.8,
+        audioFileNameFormat: '{text} by {voiceName}',
+        audioFileNamePrefix: 'prefix_',
+        audioFileNameSuffix: '_suffix',
       };
       plugin.loadData = jest.fn().mockResolvedValue(mockData);
 
@@ -109,6 +124,9 @@ describe('ElevenLabsTTSPlugin', () => {
         attachToDaily: true,
         stability: 0.7,
         similarityBoost: 0.8,
+        audioFileNameFormat: '{text} by {voiceName}',
+        audioFileNamePrefix: 'prefix_',
+        audioFileNameSuffix: '_suffix',
       };
       await plugin.saveSettings();
       expect(plugin.saveData).toHaveBeenCalledWith(plugin.settings);
@@ -159,7 +177,8 @@ describe('ElevenLabsTTSPlugin', () => {
 
       await plugin.generateAudio('Test text');
 
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(global.fetch).toHaveBeenCal
+ledWith(
         'https://api.elevenlabs.io/v1/text-to-speech/Rachel',
         expect.objectContaining({
           method: 'POST',
@@ -171,11 +190,11 @@ describe('ElevenLabsTTSPlugin', () => {
       );
 
       expect(app.vault.adapter.writeBinary).toHaveBeenCalledWith(
-        'test-folder/mocked-uuid-value.mp3',
+        expect.stringMatching(/test-folder\/.*\.mp3$/),
         mockArrayBuffer
       );
 
-      expect(mockNotice).toHaveBeenCalledWith('Audio file created: mocked-uuid-value.mp3');
+      expect(mockNotice).toHaveBeenCalledWith(expect.stringMatching(/Audio file created: .*\.mp3$/));
     });
 
     it('should show error when API key is not set', async () => {
@@ -218,6 +237,53 @@ describe('ElevenLabsTTSPlugin', () => {
 
       expect(app.vault.adapter.append).not.toHaveBeenCalled();
       expect(mockNotice).toHaveBeenCalledWith('No active daily note found');
+    });
+  });
+
+  describe('File Name Generation', () => {
+    it('should generate file name with default format', async () => {
+      const mockArrayBuffer = new ArrayBuffer(8);
+      (global.fetch as jest.Mock<Promise<Response>>).mockResolvedValueOnce({
+        arrayBuffer: jest.fn().mockResolvedValue(mockArrayBuffer),
+      } as unknown as Response);
+
+      await plugin.generateAudio('Test text');
+
+      expect(app.vault.adapter.writeBinary).toHaveBeenCalledWith(
+        expect.stringMatching(/test-folder\/Rachel - Test text\.mp3$/),
+        mockArrayBuffer
+      );
+    });
+
+    it('should generate file name with custom format', async () => {
+      plugin.settings.audioFileNameFormat = '{text} by {voiceName}';
+      const mockArrayBuffer = new ArrayBuffer(8);
+      (global.fetch as jest.Mock<Promise<Response>>).mockResolvedValueOnce({
+        arrayBuffer: jest.fn().mockResolvedValue(mockArrayBuffer),
+      } as unknown as Response);
+
+      await plugin.generateAudio('Test text');
+
+      expect(app.vault.adapter.writeBinary).toHaveBeenCalledWith(
+        expect.stringMatching(/test-folder\/Test text by Rachel\.mp3$/),
+        mockArrayBuffer
+      );
+    });
+
+    it('should generate file name with prefix and suffix', async () => {
+      plugin.settings.audioFileNamePrefix = 'prefix_';
+      plugin.settings.audioFileNameSuffix = '_suffix';
+      const mockArrayBuffer = new ArrayBuffer(8);
+      (global.fetch as jest.Mock<Promise<Response>>).mockResolvedValueOnce({
+        arrayBuffer: jest.fn().mockResolvedValue(mockArrayBuffer),
+      } as unknown as Response);
+
+      await plugin.generateAudio('Test text');
+
+      expect(app.vault.adapter.writeBinary).toHaveBeenCalledWith(
+        expect.stringMatching(/test-folder\/prefix_Rachel - Test text_suffix\.mp3$/),
+        mockArrayBuffer
+      );
     });
   });
 });
