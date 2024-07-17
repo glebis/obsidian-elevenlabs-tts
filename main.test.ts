@@ -15,7 +15,7 @@ global.fetch = jest.fn().mockResolvedValue({
   arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)),
   ok: true,
   status: 200,
-}) as jest.Mock<Promise<Response>>;
+}) as unknown as jest.Mock<Promise<Response>>;
 
 // Mock Notice
 const mockNotice = jest.fn();
