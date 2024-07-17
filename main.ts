@@ -1,4 +1,4 @@
-import { App, Plugin, PluginSettingTab, Setting, Notice, TFile, TFolder, FuzzySuggestModal, TextComponent } from 'obsidian';
+import { App, Plugin, PluginSettingTab, Setting, Notice, TFile, TFolder, FuzzySuggestModal, TextComponent, FuzzyMatch } from 'obsidian';
 import moment from 'moment';
 
 interface ElevenLabsTTSSettings {
@@ -182,7 +182,7 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
             .addButton(button => button
                 .setButtonText('Select')
                 .onClick(() => {
-                    new FolderSuggestModal(this.app, (folder) => {
+                    new FolderSuggestModal(this.app, (folder: TFolder) => {
                         this.plugin.settings.outputFolder = folder.path;
                         this.plugin.saveSettings();
                         const textComponent = containerEl.querySelector('input[type="text"]') as HTMLInputElement;
@@ -191,12 +191,6 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
                         }
                     }).open();
                 }));
-    }
-
-    display(): void {
-        const {containerEl} = this;
-
-        // ... (previous settings)
 
         new Setting(containerEl)
             .setName('Voice Stability')
@@ -248,5 +242,26 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
             new Notice('Error fetching voices');
             return [];
         }
+    }
+}
+
+class FolderSuggestModal extends FuzzySuggestModal<TFolder> {
+    onChooseItem: (folder: TFolder) => void;
+
+    constructor(app: App, onChooseItem: (folder: TFolder) => void) {
+        super(app);
+        this.onChooseItem = onChooseItem;
+    }
+
+    getItems(): TFolder[] {
+        return this.app.vault.getAllLoadedFiles().filter((f) => f instanceof TFolder) as TFolder[];
+    }
+
+    getItemText(folder: TFolder): string {
+        return folder.path;
+    }
+
+    onChooseItem(folder: TFolder, evt: MouseEvent | KeyboardEvent): void {
+        this.onChooseItem(folder);
     }
 }
