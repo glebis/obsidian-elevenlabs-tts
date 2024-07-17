@@ -198,13 +198,13 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
 
         this.updatePreviewButton(this.plugin.settings.selectedVoice, previewButton);
 
-        // Add a new setting to display language information
+        // Add a new setting to display voice characteristics
         languageInfoSetting = new Setting(containerEl)
-            .setName('Supported Languages')
-            .setDesc('Languages supported by the selected voice')
+            .setName('Voice Characteristics')
+            .setDesc('Characteristics of the selected voice')
             .addText(text => text
                 .setDisabled(true)
-                .setValue(this.getLanguageInfo(this.plugin.settings.selectedVoice)));
+                .setValue(this.getVoiceCharacteristics(this.plugin.settings.selectedVoice)));
 
         new Setting(containerEl)
             .setName('Output Folder')
@@ -290,16 +290,19 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
         }
     }
 
-    getLanguageInfo(voiceId: string): string {
-        const languages = this.voiceLanguages.get(voiceId);
-        return languages ? languages.join(', ') : 'Language information not available';
+    getVoiceCharacteristics(voiceId: string): string {
+        const voice = this.voices.find(v => v.voice_id === voiceId);
+        if (voice) {
+            return `Use case: ${voice.use_case}, Gender: ${voice.labels.gender}, Age: ${voice.labels.age}, Accent: ${voice.labels.accent}`;
+        }
+        return 'Voice characteristics not available';
     }
 
     updateLanguageInfo(voiceId: string, languageInfoSetting: Setting): void {
         if (languageInfoSetting) {
-            const languageInfo = this.getLanguageInfo(voiceId);
+            const voiceCharacteristics = this.getVoiceCharacteristics(voiceId);
             const textComponent = languageInfoSetting.components[0] as TextComponent;
-            textComponent.setValue(languageInfo);
+            textComponent.setValue(voiceCharacteristics);
         }
     }
 
