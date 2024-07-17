@@ -280,8 +280,15 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
                     "xi-api-key": this.plugin.settings.apiKey,
                 },
             });
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
             const data = await response.json();
-            this.voices = (data.voices || []).filter((voice: any) => !voice.name.includes("Academy Award"));
+            if (!Array.isArray(data.voices)) {
+                throw new Error('Unexpected API response format');
+            }
+            this.voices = data.voices.filter((voice: any) => !voice.name.includes("Academy Award"));
+            console.log('Fetched voices:', this.voices); // For debugging
             return this.voices;
         } catch (error) {
             console.error('Error fetching voices:', error);
@@ -293,7 +300,11 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
     getVoiceCharacteristics(voiceId: string): string {
         const voice = this.voices.find(v => v.voice_id === voiceId);
         if (voice) {
-            return `Use case: ${voice.use_case}, Gender: ${voice.labels.gender}, Age: ${voice.labels.age}, Accent: ${voice.labels.accent}`;
+            const useCase = voice.use_case || 'Not specified';
+            const gender = voice.labels?.gender || 'Not specified';
+            const age = voice.labels?.age || 'Not specified';
+            const accent = voice.labels?.accent || 'Not specified';
+            return `Use case: ${useCase}, Gender: ${gender}, Age: ${age}, Accent: ${accent}`;
         }
         return 'Voice characteristics not available';
     }
