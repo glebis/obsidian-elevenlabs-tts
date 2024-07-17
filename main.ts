@@ -164,7 +164,8 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
             .addDropdown(async (dropdown) => {
                 const voices = await this.fetchVoices();
                 voices.forEach((voice: any) => {
-                    dropdown.addOption(voice.voice_id, voice.name);
+                    const voiceName = voice.labels?.accent ? `${voice.name} (${voice.labels.accent})` : voice.name;
+                    dropdown.addOption(voice.voice_id, voiceName);
                     this.voiceLanguages.set(voice.voice_id, voice.labels.language);
                 });
                 dropdown.setValue(this.plugin.settings.selectedVoice);
@@ -299,9 +300,9 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
             if (voice.use_case) characteristics.push(`Use case: ${voice.use_case}`);
             if (voice.labels?.gender) characteristics.push(`Gender: ${voice.labels.gender}`);
             if (voice.labels?.age) characteristics.push(`Age: ${voice.labels.age}`);
-            return characteristics.length > 0 ? characteristics.join(', ') : 'No specific characteristics available';
+            return characteristics.join(', ');
         }
-        return 'Voice characteristics not available';
+        return '';
     }
 
     updateVoiceInfo(voiceId: string, voiceSetting: Setting): void {
