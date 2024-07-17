@@ -167,22 +167,33 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
         new Setting(containerEl)
             .setName('Output Folder')
             .setDesc('Select the folder where audio files will be saved')
-            .addText(text => text
-                .setPlaceholder('Enter folder path')
-                .setValue(this.plugin.settings.outputFolder)
-                .onChange(async (value) => {
-                    this.plugin.settings.outputFolder = value;
-                    await this.plugin.saveSettings();
-                }))
-            .addButton(button => button
-                .setButtonText('Choose')
-                .onClick(() => {
+            .addText(text => {
+                text.setPlaceholder('Enter folder path')
+                    .setValue(this.plugin.settings.outputFolder)
+                    .onChange(async (value) => {
+                        this.plugin.settings.outputFolder = value;
+                        await this.plugin.saveSettings();
+                    });
+                
+                // Open FolderSuggestModal on focus or input
+                text.inputEl.addEventListener('focus', () => {
                     new FolderSuggestModal(this.app, (folder) => {
                         this.plugin.settings.outputFolder = folder.path;
                         this.plugin.saveSettings();
-                        this.display();
+                        text.setValue(folder.path);
                     }).open();
-                }));
+                });
+
+                text.inputEl.addEventListener('input', () => {
+                    new FolderSuggestModal(this.app, (folder) => {
+                        this.plugin.settings.outputFolder = folder.path;
+                        this.plugin.saveSettings();
+                        text.setValue(folder.path);
+                    }).open();
+                });
+
+                return text;
+            });
 
     class FolderSuggestModal extends FuzzySuggestModal<TFolder> {
         constructor(app: App, private onChoose: (folder: TFolder) => void) {
