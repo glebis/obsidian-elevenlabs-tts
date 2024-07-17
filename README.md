@@ -44,6 +44,7 @@ The plugin settings can be accessed from the Obsidian settings panel. You can co
 - Automatically attach generated audio files to current note (optional)
 - Play generated audio directly in Obsidian
 - Generate sound effects with customizable duration
+- Support for sound generation using text descriptions and custom durations
 
 ## Usage
 
