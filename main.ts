@@ -261,7 +261,7 @@ class FolderSuggestModal extends FuzzySuggestModal<TFolder> {
         return folder.path;
     }
 
-    onChooseItem(folder: TFolder, evt: MouseEvent | KeyboardEvent): void {
+    onChooseSuggestedItem(folder: TFolder, evt: MouseEvent | KeyboardEvent): void {
         this.onChooseItem(folder);
     }
 }
