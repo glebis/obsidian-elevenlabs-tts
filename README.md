@@ -32,14 +32,6 @@ The plugin settings can be accessed from the Obsidian settings panel. You can co
 - **Output Folder**: Specify the folder in your Obsidian vault where the generated audio files will be saved.
 - **Attach to Daily Note**: Enable or disable the automatic attachment of generated audio files to your daily note.
 
-## TODO
-
-- [ ] Proper folder selection (export class FolderSuggest extends TextInputSuggest<TFolder>)
-- [ ] More flexible config for adding audio file
-- [ ] Customize voice settings (stability and similarity boost)
-- [ ] Play generated audio directly in Obsidian should be optional
-- [ ] Check if response is actually audio file and output error message instead of storing it as a file
-- [ ] More readable filename
 
 ## Contributions
 
