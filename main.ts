@@ -201,10 +201,10 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
         // Add a new setting to display voice characteristics
         languageInfoSetting = new Setting(containerEl)
             .setName('Voice Characteristics')
-            .setDesc('Characteristics of the selected voice')
-            .addText(text => text
-                .setDisabled(true)
-                .setValue(this.getVoiceCharacteristics(this.plugin.settings.selectedVoice)));
+            .setDesc('Characteristics of the selected voice');
+
+        const characteristicsEl = languageInfoSetting.descEl.createDiv();
+        characteristicsEl.setText(this.getVoiceCharacteristics(this.plugin.settings.selectedVoice));
 
         new Setting(containerEl)
             .setName('Output Folder')
@@ -300,11 +300,12 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
     getVoiceCharacteristics(voiceId: string): string {
         const voice = this.voices.find(v => v.voice_id === voiceId);
         if (voice) {
-            const useCase = voice.use_case || 'Not specified';
-            const gender = voice.labels?.gender || 'Not specified';
-            const age = voice.labels?.age || 'Not specified';
-            const accent = voice.labels?.accent || 'Not specified';
-            return `Use case: ${useCase}, Gender: ${gender}, Age: ${age}, Accent: ${accent}`;
+            const characteristics = [];
+            if (voice.use_case) characteristics.push(`Use case: ${voice.use_case}`);
+            if (voice.labels?.gender) characteristics.push(`Gender: ${voice.labels.gender}`);
+            if (voice.labels?.age) characteristics.push(`Age: ${voice.labels.age}`);
+            if (voice.labels?.accent) characteristics.push(`Accent: ${voice.labels.accent}`);
+            return characteristics.length > 0 ? characteristics.join(', ') : 'No specific characteristics available';
         }
         return 'Voice characteristics not available';
     }
@@ -312,8 +313,10 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
     updateLanguageInfo(voiceId: string, languageInfoSetting: Setting): void {
         if (languageInfoSetting) {
             const voiceCharacteristics = this.getVoiceCharacteristics(voiceId);
-            const textComponent = languageInfoSetting.components[0] as TextComponent;
-            textComponent.setValue(voiceCharacteristics);
+            const characteristicsEl = languageInfoSetting.descEl.querySelector('div');
+            if (characteristicsEl) {
+                characteristicsEl.setText(voiceCharacteristics);
+            }
         }
     }
 
