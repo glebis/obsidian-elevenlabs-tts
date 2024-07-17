@@ -270,7 +270,8 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
     updateLanguageInfo(voiceId: string, languageInfoSetting: Setting): void {
         if (languageInfoSetting) {
             const languageInfo = this.getLanguageInfo(voiceId);
-            languageInfoSetting.components[0].setValue(languageInfo);
+            const textComponent = languageInfoSetting.components[0] as TextComponent;
+            textComponent.setValue(languageInfo);
         }
     }
 }
