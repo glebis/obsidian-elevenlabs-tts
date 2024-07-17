@@ -11,7 +11,9 @@ jest.mock('uuid', () => ({
 }));
 
 // Mock fetch
-global.fetch = jest.fn() as jest.Mock<Promise<Response>>;
+global.fetch = jest.fn().mockResolvedValue({
+  arrayBuffer: jest.fn().mockResolvedValue(new ArrayBuffer(8)),
+}) as jest.Mock;
 
 // Mock Notice
 const mockNotice = jest.fn();
@@ -27,16 +29,16 @@ describe('ElevenLabsTTSPlugin', () => {
     app = {
       vault: {
         adapter: {
-          writeBinary: jest.fn<Promise<void>, [string, ArrayBuffer]>().mockResolvedValue(undefined),
-          read: jest.fn<Promise<string>, [string]>().mockResolvedValue('Existing content'),
-          append: jest.fn<Promise<void>, [string, string]>().mockResolvedValue(undefined),
+          writeBinary: jest.fn().mockResolvedValue(undefined),
+          read: jest.fn().mockResolvedValue('Existing content'),
+          append: jest.fn().mockResolvedValue(undefined),
         },
-        read: jest.fn<Promise<string>, [string]>().mockResolvedValue('Existing content'),
-        modify: jest.fn<Promise<void>, [string, string]>().mockResolvedValue(undefined),
-        getAbstractFileByPath: jest.fn<TFile | null, [string]>().mockReturnValue({ path: 'test-path' }),
+        read: jest.fn().mockResolvedValue('Existing content'),
+        modify: jest.fn().mockResolvedValue(undefined),
+        getAbstractFileByPath: jest.fn().mockReturnValue({ path: 'test-path' } as TFile),
       },
       workspace: {
-        getActiveFile: jest.fn<TFile | null, []>(),
+        getActiveFile: jest.fn(),
       },
     } as unknown as App;
 
@@ -54,8 +56,8 @@ describe('ElevenLabsTTSPlugin', () => {
     plugin = new ElevenLabsTTSPlugin(app, manifest);
 
     // Mock plugin methods
-    plugin.loadData = jest.fn<Promise<any>, []>().mockResolvedValue({});
-    plugin.saveData = jest.fn<Promise<void>, [any]>().mockResolvedValue(undefined);
+    plugin.loadData = jest.fn().mockResolvedValue({});
+    plugin.saveData = jest.fn().mockResolvedValue(undefined);
 
     // Initialize settings
     plugin.settings = {
@@ -74,7 +76,7 @@ describe('ElevenLabsTTSPlugin', () => {
     document.createElement = jest.fn().mockReturnValue({
       src: '',
       play: jest.fn(),
-    }) as unknown as HTMLAudioElement;
+    } as unknown as HTMLAudioElement);
 
     // Clear all mocks before each test
     jest.clearAllMocks();
