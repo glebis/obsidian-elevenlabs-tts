@@ -121,12 +121,14 @@ export default class ElevenLabsTTSPlugin extends Plugin {
                 await this.attachToDaily(filePath);
             }
 
-            // Play the audio
-            const audioBlob = new Blob([audioData], { type: 'audio/mpeg' });
-            const audioUrl = URL.createObjectURL(audioBlob);
+            // Play the audio if the setting is enabled
+            if (this.settings.playAudioInObsidian) {
+                const audioBlob = new Blob([audioData], { type: 'audio/mpeg' });
+                const audioUrl = URL.createObjectURL(audioBlob);
 
-            const audioElement = new Audio(audioUrl);
-            audioElement.play();
+                const audioElement = new Audio(audioUrl);
+                audioElement.play();
+            }
         } catch (error) {
             console.error('Error generating audio:', error);
             new Notice('Error generating audio file');
@@ -390,6 +392,16 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
                 .setValue(this.plugin.settings.attachToDaily)
                 .onChange(async (value) => {
                     this.plugin.settings.attachToDaily = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('Play Audio in Obsidian')
+            .setDesc('Automatically play generated audio files in Obsidian')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.playAudioInObsidian)
+                .onChange(async (value) => {
+                    this.plugin.settings.playAudioInObsidian = value;
                     await this.plugin.saveSettings();
                 }));
 
