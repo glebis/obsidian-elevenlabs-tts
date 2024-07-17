@@ -11,6 +11,7 @@ interface ElevenLabsTTSSettings {
     stability: number;
     similarityBoost: number;
     playAudioInObsidian: boolean;
+    outputTextPreview: boolean;
 }
 
 interface SoundGenerationRequest {
@@ -28,7 +29,8 @@ const DEFAULT_SETTINGS: ElevenLabsTTSSettings = {
     dailyNoteSubheader: '## Audio',
     stability: 0.5,
     similarityBoost: 0.5,
-    playAudioInObsidian: true
+    playAudioInObsidian: true,
+    outputTextPreview: true
 }
 
 const BASE_URL = "https://api.elevenlabs.io/v1";
