@@ -306,17 +306,11 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
     }
 
     updateVoiceInfo(voiceId: string, voiceSetting: Setting): void {
-        const voice = this.voices.find(v => v.voice_id === voiceId);
         const voiceCharacteristics = this.getVoiceCharacteristics(voiceId);
         const characteristicsEl = voiceSetting.descEl.querySelector('div');
         if (characteristicsEl) {
             characteristicsEl.empty();
-            const nameSpan = characteristicsEl.createSpan({text: `${voice?.name || 'Unknown'} `});
-            if (voice?.labels?.accent) {
-                nameSpan.createSpan({text: `(${voice.labels.accent})`, cls: 'voice-accent'});
-            }
             characteristicsEl.createDiv({text: voiceCharacteristics, cls: 'voice-characteristics'});
-            characteristicsEl.style.textAlign = 'right';
         }
     }
 
