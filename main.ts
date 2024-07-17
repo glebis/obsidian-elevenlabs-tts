@@ -6,13 +6,17 @@ interface ElevenLabsTTSSettings {
     selectedVoice: string;
     outputFolder: string;
     attachToDaily: boolean;
+    stability: number;
+    similarityBoost: number;
 }
 
 const DEFAULT_SETTINGS: ElevenLabsTTSSettings = {
     apiKey: '',
     selectedVoice: 'Rachel',
     outputFolder: '',
-    attachToDaily: false
+    attachToDaily: false,
+    stability: 0.5,
+    similarityBoost: 0.5
 }
 
 const BASE_URL = "https://api.elevenlabs.io/v1";
@@ -61,8 +65,8 @@ export default class ElevenLabsTTSPlugin extends Plugin {
 
         try {
             const voiceSettings: VoiceSettings = {
-                stability: 0.5,
-                similarity_boost: 0.5,
+                stability: this.settings.stability,
+                similarity_boost: this.settings.similarityBoost,
             };
 
             const data: TextToSpeechRequest = {
@@ -174,23 +178,40 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
                         this.plugin.settings.outputFolder = value;
                         await this.plugin.saveSettings();
                     });
-                
-                // Open FolderSuggestModal on button click
-                const selectFolderButton = new Setting(containerEl)
-                    .setName('Select Folder')
-                    .setDesc('Click to choose output folder')
-                    .addButton(button => button
-                        .setButtonText('Select folder')
-                        .onClick(() => {
-                            new FolderSuggestModal(this.app, (folder) => {
-                                this.plugin.settings.outputFolder = folder.path;
-                                this.plugin.saveSettings();
-                                text.setValue(folder.path);
-                            }).open();
-                        }));
+            })
+            .addButton(button => button
+                .setButtonText('Select folder')
+                .onClick(() => {
+                    new FolderSuggestModal(this.app, (folder) => {
+                        this.plugin.settings.outputFolder = folder.path;
+                        this.plugin.saveSettings();
+                        text.setValue(folder.path);
+                    }).open();
+                }));
 
-                return text;
-            });
+        new Setting(containerEl)
+            .setName('Voice Stability')
+            .setDesc('Set the stability of the voice (0.0 to 1.0)')
+            .addSlider(slider => slider
+                .setLimits(0, 1, 0.1)
+                .setValue(this.plugin.settings.stability || 0.5)
+                .setDynamicTooltip()
+                .onChange(async (value) => {
+                    this.plugin.settings.stability = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('Similarity Boost')
+            .setDesc('Set the similarity boost of the voice (0.0 to 1.0)')
+            .addSlider(slider => slider
+                .setLimits(0, 1, 0.1)
+                .setValue(this.plugin.settings.similarityBoost || 0.5)
+                .setDynamicTooltip()
+                .onChange(async (value) => {
+                    this.plugin.settings.similarityBoost = value;
+                    await this.plugin.saveSettings();
+                }));
 
     class FolderSuggestModal extends FuzzySuggestModal<TFolder> {
         constructor(app: App, private onChoose: (folder: TFolder) => void) {
