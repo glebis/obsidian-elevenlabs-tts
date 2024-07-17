@@ -210,6 +210,7 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
 
         onChooseItem(folder: TFolder, evt: MouseEvent | KeyboardEvent): void {
             this.onChoose(folder);
+            this.close();
         }
     }
 
