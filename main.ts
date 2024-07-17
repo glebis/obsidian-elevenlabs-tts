@@ -5,7 +5,8 @@ interface ElevenLabsTTSSettings {
     apiKey: string;
     selectedVoice: string;
     outputFolder: string;
-    attachToDaily: boolean;
+    attachmentOption: 'current' | 'daily' | 'none';
+    dailyNoteFormat: string;
     stability: number;
     similarityBoost: number;
     playAudioInObsidian: boolean;
@@ -21,7 +22,8 @@ const DEFAULT_SETTINGS: ElevenLabsTTSSettings = {
     apiKey: '',
     selectedVoice: 'Rachel',
     outputFolder: '',
-    attachToDaily: false,
+    attachmentOption: 'current',
+    dailyNoteFormat: 'YYYY-MM-DD',
     stability: 0.5,
     similarityBoost: 0.5,
     playAudioInObsidian: true
@@ -138,12 +140,22 @@ export default class ElevenLabsTTSPlugin extends Plugin {
     }
 
     async attachToDaily(filePath: string) {
-        const dailyNote = this.app.workspace.getActiveFile();
-        if (dailyNote) {
-            await this.app.vault.adapter.append(dailyNote.path, `\n\n![[${filePath}]]`);
+        const moment = (window as any).moment;
+        const dailyNoteFileName = moment().format(this.settings.dailyNoteFormat) + '.md';
+        const dailyNotePath = `${this.app.vault.configDir}/daily/${dailyNoteFileName}`;
+        
+        let dailyNote = this.app.vault.getAbstractFileByPath(dailyNotePath);
+        
+        if (!dailyNote) {
+            // Create the daily note if it doesn't exist
+            dailyNote = await this.app.vault.create(dailyNotePath, '');
+        }
+        
+        if (dailyNote instanceof TFile) {
+            await this.app.vault.append(dailyNote, `\n\n![[${filePath}]]`);
             new Notice('Audio file attached to daily note');
         } else {
-            new Notice('No active daily note found');
+            new Notice('Error: Could not find or create daily note');
         }
     }
 
@@ -181,12 +193,16 @@ export default class ElevenLabsTTSPlugin extends Plugin {
 
             new Notice(`Sound file created: ${fileName}`);
 
-            // Add the file to the current note
-            const activeFile = this.app.workspace.getActiveFile();
-            if (activeFile) {
-                const fileContent = await this.app.vault.read(activeFile);
-                const updatedContent = fileContent + `\n\n![[${fileName}]]`;
-                await this.app.vault.modify(activeFile, updatedContent);
+            // Attach the file based on the attachment option
+            if (this.settings.attachmentOption === 'current') {
+                const activeFile = this.app.workspace.getActiveFile();
+                if (activeFile) {
+                    const fileContent = await this.app.vault.read(activeFile);
+                    const updatedContent = fileContent + `\n\n![[${fileName}]]`;
+                    await this.app.vault.modify(activeFile, updatedContent);
+                }
+            } else if (this.settings.attachmentOption === 'daily') {
+                await this.attachToDaily(fileName);
             }
 
             // Play the audio
@@ -388,12 +404,26 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(containerEl)
-            .setName('Attach to Daily Note')
-            .setDesc('Automatically attach generated audio files to the daily note')
-            .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.attachToDaily)
+            .setName('Attachment Option')
+            .setDesc('Choose where to attach generated audio files')
+            .addDropdown(dropdown => dropdown
+                .addOption('current', 'Current Note')
+                .addOption('daily', 'Daily Note')
+                .addOption('none', 'Do Not Attach')
+                .setValue(this.plugin.settings.attachmentOption)
+                .onChange(async (value: 'current' | 'daily' | 'none') => {
+                    this.plugin.settings.attachmentOption = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('Daily Note Format')
+            .setDesc('Format for daily note filenames (e.g., YYYY-MM-DD)')
+            .addText(text => text
+                .setPlaceholder('YYYY-MM-DD')
+                .setValue(this.plugin.settings.dailyNoteFormat)
                 .onChange(async (value) => {
-                    this.plugin.settings.attachToDaily = value;
+                    this.plugin.settings.dailyNoteFormat = value;
                     await this.plugin.saveSettings();
                 }));
 
