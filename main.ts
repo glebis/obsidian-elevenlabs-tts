@@ -1,5 +1,5 @@
 import { App, Plugin, PluginSettingTab, Setting, Notice, TFile } from 'obsidian';
-import { v4 as uuid } from "uuid";
+import moment from 'moment';
 
 interface ElevenLabsTTSSettings {
     apiKey: string;
@@ -89,7 +89,9 @@ export default class ElevenLabsTTSPlugin extends Plugin {
             
             const audioData = await response.arrayBuffer();
 
-            const fileName = `${uuid()}.mp3`;
+            const date = moment().format('YYYY-MM-DD');
+            const truncatedText = text.slice(0, 20).replace(/[^a-zA-Z0-9]/g, '_');
+            const fileName = `${date}_${truncatedText}.mp3`;
             const filePath = `${this.settings.outputFolder}/${fileName}`;
 
             await this.app.vault.adapter.writeBinary(filePath, audioData);
