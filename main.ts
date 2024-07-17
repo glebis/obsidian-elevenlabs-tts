@@ -300,11 +300,13 @@ class SoundGenerationModal extends Modal {
 class ElevenLabsTTSSettingTab extends PluginSettingTab {
     plugin: ElevenLabsTTSPlugin;
     voiceLanguages: Map<string, string[]>;
+    updateDailyNotePreview: () => void;
 
     constructor(app: App, plugin: ElevenLabsTTSPlugin) {
         super(app, plugin);
         this.plugin = plugin;
         this.voiceLanguages = new Map();
+        this.updateDailyNotePreview = () => {};
     }
 
     display(): void {
