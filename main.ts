@@ -175,22 +175,19 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
                         await this.plugin.saveSettings();
                     });
                 
-                // Open FolderSuggestModal on focus or input
-                text.inputEl.addEventListener('focus', () => {
-                    new FolderSuggestModal(this.app, (folder) => {
-                        this.plugin.settings.outputFolder = folder.path;
-                        this.plugin.saveSettings();
-                        text.setValue(folder.path);
-                    }).open();
-                });
-
-                text.inputEl.addEventListener('input', () => {
-                    new FolderSuggestModal(this.app, (folder) => {
-                        this.plugin.settings.outputFolder = folder.path;
-                        this.plugin.saveSettings();
-                        text.setValue(folder.path);
-                    }).open();
-                });
+                // Open FolderSuggestModal on button click
+                const selectFolderButton = new Setting(containerEl)
+                    .setName('Select Folder')
+                    .setDesc('Click to choose output folder')
+                    .addButton(button => button
+                        .setButtonText('Select folder')
+                        .onClick(() => {
+                            new FolderSuggestModal(this.app, (folder) => {
+                                this.plugin.settings.outputFolder = folder.path;
+                                this.plugin.saveSettings();
+                                text.setValue(folder.path);
+                            }).open();
+                        }));
 
                 return text;
             });
