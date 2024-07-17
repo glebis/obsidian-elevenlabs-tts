@@ -193,61 +193,61 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
                 }));
     }
 
-        new Setting(containerEl)
-            .setName('Voice Stability')
-            .setDesc('Set the stability of the voice (0.0 to 1.0)')
-            .addSlider(slider => slider
-                .setLimits(0, 1, 0.1)
-                .setValue(this.plugin.settings.stability || 0.5)
-                .setDynamicTooltip()
-                .onChange(async (value) => {
-                    this.plugin.settings.stability = value;
-                    await this.plugin.saveSettings();
-                }));
+    new Setting(containerEl)
+        .setName('Voice Stability')
+        .setDesc('Set the stability of the voice (0.0 to 1.0)')
+        .addSlider(slider => slider
+            .setLimits(0, 1, 0.1)
+            .setValue(this.plugin.settings.stability || 0.5)
+            .setDynamicTooltip()
+            .onChange(async (value) => {
+                this.plugin.settings.stability = value;
+                await this.plugin.saveSettings();
+            }));
 
-        new Setting(containerEl)
-            .setName('Similarity Boost')
-            .setDesc('Set the similarity boost of the voice (0.0 to 1.0)')
-            .addSlider(slider => slider
-                .setLimits(0, 1, 0.1)
-                .setValue(this.plugin.settings.similarityBoost || 0.5)
-                .setDynamicTooltip()
-                .onChange(async (value) => {
-                    this.plugin.settings.similarityBoost = value;
-                    await this.plugin.saveSettings();
-                }));
+    new Setting(containerEl)
+        .setName('Similarity Boost')
+        .setDesc('Set the similarity boost of the voice (0.0 to 1.0)')
+        .addSlider(slider => slider
+            .setLimits(0, 1, 0.1)
+            .setValue(this.plugin.settings.similarityBoost || 0.5)
+            .setDynamicTooltip()
+            .onChange(async (value) => {
+                this.plugin.settings.similarityBoost = value;
+                await this.plugin.saveSettings();
+            }));
 
-    class FolderSuggestModal extends FuzzySuggestModal<TFolder> {
-        constructor(app: App, private onChoose: (folder: TFolder) => void) {
-            super(app);
-        }
+    new Setting(containerEl)
+        .setName('Attach to Daily Note')
+        .setDesc('Automatically attach generated audio files to the daily note')
+        .addToggle(toggle => toggle
+            .setValue(this.plugin.settings.attachToDaily)
+            .onChange(async (value) => {
+                this.plugin.settings.attachToDaily = value;
+                await this.plugin.saveSettings();
+            }));
+}
 
-        getItems(): TFolder[] {
-            return this.app.vault.getAllLoadedFiles().filter((f): f is TFolder => f instanceof TFolder);
-        }
-
-        getItemText(folder: TFolder): string {
-            return folder.path;
-        }
-
-        onChooseItem(folder: TFolder, evt: MouseEvent | KeyboardEvent): void {
-            this.onChoose(folder);
-            this.close();
-        }
+class FolderSuggestModal extends FuzzySuggestModal<TFolder> {
+    constructor(app: App, private onChoose: (folder: TFolder) => void) {
+        super(app);
     }
 
-        new Setting(containerEl)
-            .setName('Attach to Daily Note')
-            .setDesc('Automatically attach generated audio files to the daily note')
-            .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.attachToDaily)
-                .onChange(async (value) => {
-                    this.plugin.settings.attachToDaily = value;
-                    await this.plugin.saveSettings();
-                }));
+    getItems(): TFolder[] {
+        return this.app.vault.getAllLoadedFiles().filter((f): f is TFolder => f instanceof TFolder);
     }
 
-    async fetchVoices(): Promise<any[]> {
+    getItemText(folder: TFolder): string {
+        return folder.path;
+    }
+
+    onChooseItem(folder: TFolder, evt: MouseEvent | KeyboardEvent): void {
+        this.onChoose(folder);
+        this.close();
+    }
+}
+
+async fetchVoices(): Promise<any[]> {
         try {
             const response = await fetch(`${BASE_URL}/voices`, {
                 method: "GET",
