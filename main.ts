@@ -117,9 +117,9 @@ export default class ElevenLabsTTSPlugin extends Plugin {
             
             const audioData = await response.arrayBuffer();
 
-            const date = moment().format('YYYYMMDD HHmmss');
+            const date = moment().format('yyyymmdd hhmmss');
             const truncatedText = transliterate(text.slice(0, 20)).replace(/[^a-zA-Z0-9]/g, '_');
-            const fileName = `${date}_${truncatedText}.mp3`;
+            const fileName = `${date}_${truncatedText}.mp3`.toLowerCase();
             const filePath = `${this.settings.outputFolder}/${fileName}`;
 
             await this.app.vault.adapter.writeBinary(filePath, audioData);
