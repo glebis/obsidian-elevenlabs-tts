@@ -19,7 +19,8 @@
     ],
     "types": ["node"],
     "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "resolveJsonModule": true
   },
   "include": ["**/*.ts"],
   "exclude": ["**/*.test.ts", "__mocks__/**/*"]

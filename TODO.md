@@ -1,5 +1,6 @@
 # TODO List for ElevenLabs TTS Plugin
 
+- [ ] If the folder is root (/), file is not inserted into note
 - [x] Implement proper folder selection (Completed: Using FolderSuggestModal)
 - [ ] Create more flexible config for adding audio file
 - [x] Allow customization of voice settings (stability and similarity boost)
