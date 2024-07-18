@@ -2,6 +2,8 @@
 
 The ElevenLabs TTS Plugin for Obsidian allows you to generate high-quality audio from text using the ElevenLabs Text-to-Speech API. This plugin provides a seamless integration with Obsidian, enabling you to create audio files directly from selected text in your notes.
 
+Плагин ElevenLabs TTS для Obsidian позволяет создавать высококачественные аудиофайлы из текста с помощью API ElevenLabs.
+
 ## Features
 
 - Generate audio files from selected text in Obsidian

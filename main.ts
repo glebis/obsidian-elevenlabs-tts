@@ -169,7 +169,8 @@ export default class ElevenLabsTTSPlugin extends Plugin {
                 const subheader = this.settings.dailyNoteSubheader;
                 let updatedContent: string;
 
-                const newItem = `${fullText}\n![[${filePath}]]`;
+                const truncatedText = fullText.split(' ').slice(0, 10).join(' ') + (fullText.split(' ').length > 10 ? '...' : '');
+                const newItem = `${truncatedText}\n![[${filePath}]]`;
                 if (content.includes(subheader)) {
                     // If subheader exists, append the new item to the list
                     updatedContent = content.replace(subheader, `${subheader}\n${newItem}`);
@@ -193,7 +194,8 @@ export default class ElevenLabsTTSPlugin extends Plugin {
     async attachToCurrent(filePath: string, textPreview: string = '', fullText: string = '') {
         const activeFile = this.app.workspace.getActiveFile();
         if (activeFile) {
-            const attachmentText = `\n\n${fullText}\n![[${filePath}]]`;
+            const truncatedText = fullText.split(' ').slice(0, 10).join(' ') + (fullText.split(' ').length > 10 ? '...' : '');
+            const attachmentText = `\n\n${truncatedText}\n![[${filePath}]]`;
             await this.app.vault.append(activeFile, attachmentText);
             new Notice('Audio file attached to current note');
         } else {
