@@ -12,7 +12,7 @@ The ElevenLabs TTS Plugin for Obsidian allows you to generate high-quality audio
 
 ## Installation
 
-1. Install the plugin from the Obsidian Community Plugins store.
+1. Install the by downloading the latest release and placing a folder with the files into .obsidian/plugins folder in your vault.
 2. After installation, the plugin will prompt you to enter your ElevenLabs API key, which you can obtain from the [ElevenLabs website](https://elevenlabs.io/).
 
 ## Usage
