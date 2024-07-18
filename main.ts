@@ -1,5 +1,6 @@
 import { App, Plugin, PluginSettingTab, Setting, Notice, TFile, TFolder, FuzzySuggestModal, TextComponent, FuzzyMatch, ButtonComponent, setIcon, Modal } from 'obsidian';
 import moment from 'moment';
+import { transliterate } from 'transliteration';
 
 interface ElevenLabsTTSSettings {
     apiKey: string;
@@ -117,7 +118,7 @@ export default class ElevenLabsTTSPlugin extends Plugin {
             const audioData = await response.arrayBuffer();
 
             const date = moment().format('YYYYMMDD HH:mm');
-            const truncatedText = text.slice(0, 20).replace(/[^a-zA-Z0-9]/g, '_');
+            const truncatedText = transliterate(text.slice(0, 20)).replace(/[^a-zA-Z0-9]/g, '_');
             const fileName = `${date}_${truncatedText}.mp3`;
             const filePath = `${this.settings.outputFolder}/${fileName}`;
 
@@ -229,7 +230,7 @@ export default class ElevenLabsTTSPlugin extends Plugin {
             const audioData = await response.arrayBuffer();
 
             const date = moment().format('YYYYMMDD HH:mm');
-            const truncatedText = request.text.slice(0, 20).replace(/[^a-zA-Z0-9]/g, '_');
+            const truncatedText = transliterate(request.text.slice(0, 20)).replace(/[^a-zA-Z0-9]/g, '_');
             const fileName = `${date}_${truncatedText}_sound.mp3`;
             const filePath = `${this.settings.outputFolder}/${fileName}`;
 
