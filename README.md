@@ -57,6 +57,11 @@ The plugin settings can be accessed from the Obsidian settings panel. You can co
 To generate sound effects:
 1. Use the `Generate Sound` command from the Command Palette.
 2. Enter the text description of the sound you want to generate and set the duration.
+3. The generated sound will be saved and attached to your current note or daily note, depending on your settings.
+
+To generate sound effects:
+1. Use the `Generate Sound` command from the Command Palette.
+2. Enter the text description of the sound you want to generate and set the duration.
 3. The generated sound will be saved and attached to your current note.
 
 ## Contributions
