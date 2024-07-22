@@ -31,10 +31,17 @@ To generate sound effects:
 2. Enter the text description of the sound you want to generate and set the duration.
 3. The generated sound will be saved and attached to your current note or daily note, depending on your settings.
 
-To generate sound effects:
-1. Use the `Generate Sound` command from the Command Palette.
-2. Enter the text description of the sound you want to generate and set the duration.
-3. The generated sound will be saved and attached to your current note.
+## Language Support
+
+This plugin now supports multiple languages for its interface. It automatically detects your system language and switches between English and Russian. The plugin's interface will update in real-time when you change Obsidian's language settings.
+
+To change the language:
+1. Go to Obsidian Settings
+2. Navigate to the "Language" section
+3. Select your preferred language (English or Russian)
+4. The plugin's interface will automatically update to reflect the chosen language
+
+Note: If your system language is not English or Russian, the plugin will default to English.
 
 ## Contributions
 
