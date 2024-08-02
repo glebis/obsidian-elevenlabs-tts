@@ -44,8 +44,7 @@ class MultiVoiceTTSModal extends Modal {
         settingsLink.addEventListener('click', (e) => {
             e.preventDefault();
             this.close();
-            this.plugin.app.setting.open();
-            this.plugin.app.setting.openTabById(this.plugin.manifest.id);
+            this.plugin.app.setting.open(this.plugin.manifest.id);
         });
 
         new Setting(contentEl)
