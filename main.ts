@@ -113,7 +113,7 @@ export default class ElevenLabsTTSPlugin extends Plugin {
                 body: JSON.stringify(data),
             };
 
-            const response = await fetch(`${BASE_URL}/text-to-speech/${this.settings.selectedVoice}`, requestOptions);
+            const response = await fetch(`${BASE_URL}/text-to-speech/${this.settings.primaryVoice}`, requestOptions);
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -383,7 +383,7 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
                         this.plugin.settings[settingKey] = value;
                         await this.plugin.saveSettings();
                         this.updateVoiceInfo(value, voiceSetting);
-                        this.updatePreviewButton(value, voiceSetting.controlEl.querySelector('.play-button') as HTMLElement);
+                        this.updatePreviewButton(value, voiceSetting.controlEl.querySelector('.play-button') as ButtonComponent);
                         if (audio) {
                             audio.pause();
                             audio = null;
@@ -407,7 +407,7 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
                     }
                 });
 
-            this.updatePreviewButton(this.plugin.settings[settingKey], previewButton.buttonEl);
+            this.updatePreviewButton(this.plugin.settings[settingKey], previewButton);
 
             // Add voice characteristics directly under the dropdown and play button
             const characteristicsEl = voiceSetting.descEl.createDiv();
@@ -603,12 +603,16 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
         }
     }
 
-    updatePreviewButton(voiceId: string, previewButton: ButtonComponent): void {
+    updatePreviewButton(voiceId: string, previewButton: ButtonComponent | HTMLElement): void {
         const voice = this.voices.find(v => v.voice_id === voiceId);
-        previewButton.setDisabled(!voice || !voice.preview_url);
+        if (previewButton instanceof ButtonComponent) {
+            previewButton.setDisabled(!voice || !voice.preview_url);
+        } else if (previewButton instanceof HTMLElement) {
+            previewButton.disabled = !voice || !voice.preview_url;
+        }
     }
 
-    async playVoicePreview(voiceId: string, previewButton: ButtonComponent): Promise<void> {
+    async playVoicePreview(voiceId: string, previewButton: ButtonComponent | HTMLElement): Promise<void> {
         const voice = this.voices.find(v => v.voice_id === voiceId);
         if (voice && voice.preview_url) {
             const audio = new Audio(voice.preview_url);
