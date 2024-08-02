@@ -223,6 +223,7 @@ export default class ElevenLabsTTSPlugin extends Plugin {
         }
 
         try {
+            console.log('Starting multi-voice audio generation');
             const voiceSettings: VoiceSettings = {
                 stability: this.settings.stability,
                 similarity_boost: this.settings.similarityBoost,
@@ -255,6 +256,7 @@ export default class ElevenLabsTTSPlugin extends Plugin {
                     body: JSON.stringify(data),
                 };
 
+                console.log(`Sending request for voice: ${voiceId}, text: "${segment.text.slice(0, 30)}..."`);
                 const response = await fetch(`${BASE_URL}/text-to-speech/${voiceId}`, requestOptions);
                 
                 if (!response.ok) {
@@ -263,35 +265,45 @@ export default class ElevenLabsTTSPlugin extends Plugin {
                 
                 const audioData = await response.arrayBuffer();
                 audioBuffers.push(audioData);
+                console.log(`Received audio data for voice: ${voiceId}, length: ${audioData.byteLength} bytes`);
             }
 
+            console.log('Merging audio buffers');
             const combinedAudioBuffer = this.combineAudioBuffers(audioBuffers);
+            console.log(`Combined audio buffer length: ${combinedAudioBuffer.byteLength} bytes`);
 
             const date = moment().format('yyyymmdd hhmmss');
             const truncatedText = transliterate(text.slice(0, 20)).replace(/[^a-zA-Z0-9]/g, '_');
             const fileName = `${date}_${truncatedText}_multi_voice.mp3`.toLowerCase();
             const filePath = `${this.settings.outputFolder}/${fileName}`;
 
+            console.log(`Writing audio file: ${filePath}`);
             await this.app.vault.adapter.writeBinary(filePath, combinedAudioBuffer);
+            console.log('Audio file written successfully');
 
             new Notice(`Multi-voice audio file created: ${fileName}`);
 
             const textPreview = this.settings.outputTextPreview ? text.slice(0, 50) + (text.length > 50 ? '...' : '') : '';
 
             if (this.settings.attachmentOption === 'daily') {
+                console.log('Attaching to daily note');
                 await this.attachToDaily(filePath, textPreview, text);
             } else if (this.settings.attachmentOption === 'current') {
+                console.log('Attaching to current note');
                 await this.attachToCurrent(filePath, textPreview, text);
             }
 
             // Play the audio if the setting is enabled
             if (this.settings.playAudioInObsidian) {
+                console.log('Playing audio in Obsidian');
                 const audioBlob = new Blob([combinedAudioBuffer], { type: 'audio/mpeg' });
                 const audioUrl = URL.createObjectURL(audioBlob);
 
                 const audioElement = new Audio(audioUrl);
                 audioElement.play();
             }
+
+            console.log('Multi-voice audio generation completed successfully');
         } catch (error) {
             console.error('Error generating multi-voice audio:', error);
             new Notice('Error generating multi-voice audio file');
