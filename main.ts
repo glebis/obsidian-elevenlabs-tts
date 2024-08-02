@@ -33,8 +33,24 @@ class MultiVoiceTTSModal extends Modal {
 
         contentEl.createEl('h2', { text: 'Multi-Voice Text-to-Speech' });
 
+        const explanationEl = contentEl.createEl('p', { 
+            text: 'This feature uses different voices for various parts of the text. ',
+            cls: 'setting-item-description'
+        });
+        const settingsLink = explanationEl.createEl('a', {
+            text: 'Configure voices in plugin settings',
+            href: '#'
+        });
+        settingsLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.close();
+            this.plugin.app.setting.open();
+            this.plugin.app.setting.openTabById('obsidian-elevenlabs-tts');
+        });
+
         new Setting(contentEl)
             .setName('Text')
+            .setDesc('Enter your text here. Headers will use the secondary voice, quotes and code blocks will use the tertiary voice, and regular text will use the primary voice.')
             .addTextArea(text => {
                 this.textComponent = text;
                 text.setValue(this.text)
