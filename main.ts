@@ -4,7 +4,9 @@ import { transliterate } from 'transliteration';
 
 interface ElevenLabsTTSSettings {
     apiKey: string;
-    selectedVoice: string;
+    primaryVoice: string;
+    secondaryVoice: string;
+    tertiaryVoice: string;
     outputFolder: string;
     attachmentOption: 'current' | 'daily' | 'none';
     dailyNoteFormat: string;
@@ -23,7 +25,9 @@ interface SoundGenerationRequest {
 
 const DEFAULT_SETTINGS: ElevenLabsTTSSettings = {
     apiKey: '',
-    selectedVoice: 'Rachel',
+    primaryVoice: 'Rachel',
+    secondaryVoice: 'Rachel',
+    tertiaryVoice: 'Rachel',
     outputFolder: '',
     attachmentOption: 'current',
     dailyNoteFormat: 'YYYY-MM-DD',
