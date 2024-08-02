@@ -35,11 +35,13 @@ class MultiVoiceTTSModal extends Modal {
 
         new Setting(contentEl)
             .setName('Text')
-            .addText(text => {
+            .addTextArea(text => {
                 this.textComponent = text;
                 text.setValue(this.text)
                     .setPlaceholder('Enter text for multi-voice TTS')
                     .onChange(value => this.text = value);
+                text.inputEl.rows = 10;
+                text.inputEl.cols = 50;
             });
 
         new Setting(contentEl)
