@@ -26,6 +26,15 @@ The ElevenLabs TTS Plugin for Obsidian allows you to generate high-quality audio
 4. If the "Attach to Daily Note" option is enabled, the generated audio file will be automatically attached to your daily note.
 5. The generated audio will also be played automatically in Obsidian.
 
+To use the Multi-Voice Text-to-Speech feature:
+1. Use the `Multi-Voice Text-to-Speech` command from the Command Palette.
+2. In the modal that appears, enter or paste your text. The plugin will use different voices for various parts of the text:
+   - Primary voice for regular text
+   - Secondary voice for headers
+   - Tertiary voice for quotes, code blocks, and callouts
+3. Click "Generate" to create the multi-voice audio file.
+4. The generated audio will be saved, attached to your note (based on your settings), and played automatically.
+
 To generate sound effects:
 1. Use the `Generate Sound` command from the Command Palette.
 2. Enter the text description of the sound you want to generate and set the duration.
