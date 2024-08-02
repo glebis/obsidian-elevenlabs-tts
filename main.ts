@@ -97,36 +97,46 @@ export default class ElevenLabsTTSPlugin extends Plugin {
                 similarity_boost: this.settings.similarityBoost,
             };
 
-            const data: TextToSpeechRequest = {
-                model_id: "eleven_multilingual_v2",
-                text: text,
-                voice_settings: voiceSettings,
-            };
+            const voices = [this.settings.primaryVoice, this.settings.secondaryVoice, this.settings.tertiaryVoice];
+            const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+            let audioBuffers: ArrayBuffer[] = [];
 
-            const requestOptions: RequestInit = {
-                method: "POST",
-                headers: {
-                    'Accept': "audio/mpeg",
-                    'xi-api-key': this.settings.apiKey,
-                    'Content-Type': "application/json",
-                },
-                body: JSON.stringify(data),
-            };
+            for (let i = 0; i < sentences.length; i++) {
+                const voiceId = voices[i % voices.length];
+                const data: TextToSpeechRequest = {
+                    model_id: "eleven_multilingual_v2",
+                    text: sentences[i].trim(),
+                    voice_settings: voiceSettings,
+                };
 
-            const response = await fetch(`${BASE_URL}/text-to-speech/${this.settings.primaryVoice}`, requestOptions);
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const requestOptions: RequestInit = {
+                    method: "POST",
+                    headers: {
+                        'Accept': "audio/mpeg",
+                        'xi-api-key': this.settings.apiKey,
+                        'Content-Type': "application/json",
+                    },
+                    body: JSON.stringify(data),
+                };
+
+                const response = await fetch(`${BASE_URL}/text-to-speech/${voiceId}`, requestOptions);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const audioData = await response.arrayBuffer();
+                audioBuffers.push(audioData);
             }
-            
-            const audioData = await response.arrayBuffer();
+
+            const combinedAudioBuffer = this.combineAudioBuffers(audioBuffers);
 
             const date = moment().format('yyyymmdd hhmmss');
             const truncatedText = transliterate(text.slice(0, 20)).replace(/[^a-zA-Z0-9]/g, '_');
             const fileName = `${date}_${truncatedText}.mp3`.toLowerCase();
             const filePath = `${this.settings.outputFolder}/${fileName}`;
 
-            await this.app.vault.adapter.writeBinary(filePath, audioData);
+            await this.app.vault.adapter.writeBinary(filePath, combinedAudioBuffer);
 
             new Notice(`Audio file created: ${fileName}`);
 
@@ -140,7 +150,7 @@ export default class ElevenLabsTTSPlugin extends Plugin {
 
             // Play the audio if the setting is enabled
             if (this.settings.playAudioInObsidian) {
-                const audioBlob = new Blob([audioData], { type: 'audio/mpeg' });
+                const audioBlob = new Blob([combinedAudioBuffer], { type: 'audio/mpeg' });
                 const audioUrl = URL.createObjectURL(audioBlob);
 
                 const audioElement = new Audio(audioUrl);
@@ -150,6 +160,17 @@ export default class ElevenLabsTTSPlugin extends Plugin {
             console.error('Error generating audio:', error);
             new Notice('Error generating audio file');
         }
+    }
+
+    combineAudioBuffers(buffers: ArrayBuffer[]): ArrayBuffer {
+        const totalLength = buffers.reduce((acc, buffer) => acc + buffer.byteLength, 0);
+        const result = new Uint8Array(totalLength);
+        let offset = 0;
+        for (const buffer of buffers) {
+            result.set(new Uint8Array(buffer), offset);
+            offset += buffer.byteLength;
+        }
+        return result.buffer;
     }
 
     async attachToDaily(filePath: string, textPreview: string = '', fullText: string = '') {
