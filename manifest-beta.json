@@ -1,0 +1,10 @@
+{
+    "id": "obsidian-elevenlabs-tts-beta",
+    "name": "ElevenLabs Text-to-Speech (Beta)",
+    "version": "1.2.0-beta.1",
+    "minAppVersion": "0.12.0",
+    "description": "Generate audio from selected text using ElevenLabs API (Beta version)",
+    "author": "Gleb Kalinin",
+    "authorUrl": "https://github.com/glebis",
+    "isDesktopOnly": true
+}
