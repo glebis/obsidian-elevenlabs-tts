@@ -581,7 +581,11 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
         const createVoiceSetting = (containerEl: HTMLElement, settingName: string, settingKey: 'primaryVoice' | 'secondaryVoice' | 'tertiaryVoice') => {
             const voiceSetting = new Setting(containerEl)
                 .setName(`${settingName} Voice`)
-                .setDesc(`Select the ${settingName.toLowerCase()} voice to use`)
+                .setDesc(`Select the ${settingName.toLowerCase()} voice to use. ${
+                    settingKey === 'primaryVoice' ? 'Used for regular text.' :
+                    settingKey === 'secondaryVoice' ? 'Used for headers.' :
+                    'Used for quotes, code blocks, and callouts.'
+                }`)
                 .addDropdown(async (dropdown) => {
                     const voices = await this.fetchVoices();
                     voices.forEach((voice: any) => {
