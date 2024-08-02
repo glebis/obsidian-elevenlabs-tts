@@ -50,3 +50,17 @@ Contributions to this plugin are welcome! If you encounter any issues or have su
 ## License
 
 This plugin is released under the [MIT License](https://opensource.org/licenses/MIT).
+
+## Release Notes
+
+### Version 1.1.0
+
+- Added multivoice mode for enhanced text-to-speech conversion
+- New feature allows different voices for various parts of the text:
+  - Primary voice for regular text
+  - Secondary voice for headers
+  - Tertiary voice for quotes, code blocks, and callouts
+- Implemented a new command "Multi-Voice Text-to-Speech" in the Command Palette
+- Updated settings to include voice selection for primary, secondary, and tertiary voices
+- Improved text parsing to identify different Markdown elements
+- Enhanced error handling and progress feedback for long-running processes
