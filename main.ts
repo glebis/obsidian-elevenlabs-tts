@@ -358,52 +358,68 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        let previewButton: ButtonComponent;
+        let primaryPreviewButton: ButtonComponent;
+        let secondaryPreviewButton: ButtonComponent;
+        let tertiaryPreviewButton: ButtonComponent;
         let audio: HTMLAudioElement | null = null;
 
-        const voiceSetting = new Setting(containerEl)
-            .setName('Voice')
-            .setDesc('Select the voice to use')
-            .addDropdown(async (dropdown) => {
-                const voices = await this.fetchVoices();
-                voices.forEach((voice: any) => {
-                    const voiceName = voice.labels?.accent ? `${voice.name} (${voice.labels.accent})` : voice.name;
-                    dropdown.addOption(voice.voice_id, voiceName);
-                    this.voiceLanguages.set(voice.voice_id, voice.labels.language);
+        const createVoiceSetting = (containerEl: HTMLElement, settingName: string, settingKey: 'primaryVoice' | 'secondaryVoice' | 'tertiaryVoice') => {
+            const voiceSetting = new Setting(containerEl)
+                .setName(`${settingName} Voice`)
+                .setDesc(`Select the ${settingName.toLowerCase()} voice to use`)
+                .addDropdown(async (dropdown) => {
+                    const voices = await this.fetchVoices();
+                    voices.forEach((voice: any) => {
+                        const voiceName = voice.labels?.accent ? `${voice.name} (${voice.labels.accent})` : voice.name;
+                        dropdown.addOption(voice.voice_id, voiceName);
+                        this.voiceLanguages.set(voice.voice_id, voice.labels.language);
+                    });
+                    dropdown.setValue(this.plugin.settings[settingKey]);
+                    dropdown.onChange(async (value) => {
+                        this.plugin.settings[settingKey] = value;
+                        await this.plugin.saveSettings();
+                        this.updateVoiceInfo(value, voiceSetting);
+                        this.updatePreviewButton(value, voiceSetting.controlEl.querySelector('.play-button') as HTMLElement);
+                        if (audio) {
+                            audio.pause();
+                            audio = null;
+                        }
+                        setIcon(voiceSetting.controlEl.querySelector('.play-button') as HTMLElement, 'play');
+                    });
+                
+                    // Set initial voice info
+                    this.updateVoiceInfo(this.plugin.settings[settingKey], voiceSetting);
                 });
-                dropdown.setValue(this.plugin.settings.selectedVoice);
-                dropdown.onChange(async (value) => {
-                    this.plugin.settings.selectedVoice = value;
-                    await this.plugin.saveSettings();
-                    this.updateVoiceInfo(value, voiceSetting);
-                    this.updatePreviewButton(value, previewButton);
-                    if (audio) {
+
+            const previewButton = new ButtonComponent(voiceSetting.controlEl)
+                .setIcon('play')
+                .setClass('play-button')
+                .onClick(() => {
+                    if (audio && !audio.paused) {
                         audio.pause();
-                        audio = null;
+                        setIcon(previewButton.buttonEl, 'play');
+                    } else {
+                        this.playVoicePreview(this.plugin.settings[settingKey], previewButton.buttonEl);
                     }
-                    setIcon(previewButton.buttonEl, 'play');
                 });
-            
-                // Set initial voice info
-                this.updateVoiceInfo(this.plugin.settings.selectedVoice, voiceSetting);
-            });
 
-        previewButton = new ButtonComponent(voiceSetting.controlEl)
-            .setIcon('play')
-            .onClick(() => {
-                if (audio && !audio.paused) {
-                    audio.pause();
-                    setIcon(previewButton.buttonEl, 'play');
-                } else {
-                    this.playVoicePreview(this.plugin.settings.selectedVoice, previewButton);
-                }
-            });
+            this.updatePreviewButton(this.plugin.settings[settingKey], previewButton.buttonEl);
 
-        this.updatePreviewButton(this.plugin.settings.selectedVoice, previewButton);
+            // Add voice characteristics directly under the dropdown and play button
+            const characteristicsEl = voiceSetting.descEl.createDiv();
+            characteristicsEl.setText(this.getVoiceCharacteristics(this.plugin.settings[settingKey]));
 
-        // Add voice characteristics directly under the dropdown and play button
-        const characteristicsEl = voiceSetting.descEl.createDiv();
-        characteristicsEl.setText(this.getVoiceCharacteristics(this.plugin.settings.selectedVoice));
+            return { voiceSetting, previewButton };
+        };
+
+        const { voiceSetting: primaryVoiceSetting, previewButton: primaryPreviewBtn } = createVoiceSetting(containerEl, 'Primary', 'primaryVoice');
+        primaryPreviewButton = primaryPreviewBtn;
+
+        const { voiceSetting: secondaryVoiceSetting, previewButton: secondaryPreviewBtn } = createVoiceSetting(containerEl, 'Secondary', 'secondaryVoice');
+        secondaryPreviewButton = secondaryPreviewBtn;
+
+        const { voiceSetting: tertiaryVoiceSetting, previewButton: tertiaryPreviewBtn } = createVoiceSetting(containerEl, 'Tertiary', 'tertiaryVoice');
+        tertiaryPreviewButton = tertiaryPreviewBtn;
 
         new Setting(containerEl)
             .setName('Output Folder')
