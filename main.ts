@@ -20,7 +20,7 @@ interface ElevenLabsTTSSettings {
 class MultiVoiceTTSModal extends Modal {
     plugin: ElevenLabsTTSPlugin;
     text: string;
-    textComponent: TextComponent;
+    textComponent: TextAreaComponent;
 
     constructor(app: App, plugin: ElevenLabsTTSPlugin, initialText: string = '') {
         super(app);
