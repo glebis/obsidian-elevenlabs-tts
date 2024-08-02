@@ -383,7 +383,7 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
                         this.plugin.settings[settingKey] = value;
                         await this.plugin.saveSettings();
                         this.updateVoiceInfo(value, voiceSetting);
-                        this.updatePreviewButton(value, voiceSetting.controlEl.querySelector('.play-button') as ButtonComponent);
+                        this.updatePreviewButton(value, voiceSetting.controlEl.querySelector('.play-button') as HTMLElement);
                         if (audio) {
                             audio.pause();
                             audio = null;
@@ -608,7 +608,7 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
         if (previewButton instanceof ButtonComponent) {
             previewButton.setDisabled(!voice || !voice.preview_url);
         } else if (previewButton instanceof HTMLElement) {
-            previewButton.disabled = !voice || !voice.preview_url;
+            previewButton.toggleAttribute('disabled', !voice || !voice.preview_url);
         }
     }
 
@@ -616,14 +616,15 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
         const voice = this.voices.find(v => v.voice_id === voiceId);
         if (voice && voice.preview_url) {
             const audio = new Audio(voice.preview_url);
-            setIcon(previewButton.buttonEl, 'pause');
+            const buttonEl = previewButton instanceof ButtonComponent ? previewButton.buttonEl : previewButton;
+            setIcon(buttonEl, 'pause');
             
             audio.onended = () => {
-                setIcon(previewButton.buttonEl, 'play');
+                setIcon(buttonEl, 'play');
             };
 
             audio.onpause = () => {
-                setIcon(previewButton.buttonEl, 'play');
+                setIcon(buttonEl, 'play');
             };
 
             await audio.play();
