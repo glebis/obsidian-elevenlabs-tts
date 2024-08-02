@@ -9,3 +9,4 @@
 - [x] Implement more readable filename (Completed: Using date and beginning of text)
 - [ ] Add option to customize audio file naming format
 - [ ] Implement error handling for API rate limits and quota exceeded
+- [ ] Allow selection of multiple voices: Primary, Secondary, Tertiary (default to Primary)
