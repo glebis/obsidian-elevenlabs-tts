@@ -1,4 +1,4 @@
-import { App, Plugin, PluginSettingTab, Setting, Notice, TFile, TFolder, FuzzySuggestModal, TextComponent, TextAreaComponent, FuzzyMatch, ButtonComponent, setIcon, Modal } from 'obsidian';
+import { App, Plugin, PluginSettingTab, Setting, Notice, TFile, TFolder, FuzzySuggestModal, TextComponent, TextAreaComponent, FuzzyMatch, ButtonComponent, setIcon, Modal, PluginManifest } from 'obsidian';
 import moment from 'moment';
 import { transliterate } from 'transliteration';
 
@@ -44,7 +44,7 @@ class MultiVoiceTTSModal extends Modal {
         settingsLink.addEventListener('click', (e) => {
             e.preventDefault();
             this.close();
-            this.plugin.app.setting.open(this.plugin.manifest.id);
+            this.plugin.openSettings();
         });
 
         new Setting(contentEl)
@@ -115,6 +115,12 @@ interface TextToSpeechRequest {
 
 export default class ElevenLabsTTSPlugin extends Plugin {
     settings: ElevenLabsTTSSettings;
+    manifest: PluginManifest;
+
+    constructor(app: App, manifest: PluginManifest) {
+        super(app, manifest);
+        this.manifest = manifest;
+    }
 
     async onload() {
         await this.loadSettings();
@@ -154,6 +160,16 @@ export default class ElevenLabsTTSPlugin extends Plugin {
 
     async saveSettings() {
         await this.saveData(this.settings);
+    }
+
+    openSettings() {
+        if ('setting' in this.app && typeof this.app.setting.open === 'function') {
+            this.app.setting.open();
+            this.app.setting.openTabById(this.manifest.id);
+        } else {
+            new Notice('Unable to open settings. Please open them manually.');
+            console.warn('Settings API not available. Unable to open settings programmatically.');
+        }
     }
 
     async generateAudio(text: string): Promise<void> {
