@@ -1,4 +1,4 @@
-import { App, Plugin, PluginSettingTab, Setting, Notice, TFile, TFolder, FuzzySuggestModal, TextComponent, FuzzyMatch, ButtonComponent, setIcon, Modal } from 'obsidian';
+import { App, Plugin, PluginSettingTab, Setting, Notice, TFile, TFolder, FuzzySuggestModal, TextComponent, TextAreaComponent, FuzzyMatch, ButtonComponent, setIcon, Modal } from 'obsidian';
 import moment from 'moment';
 import { transliterate } from 'transliteration';
 
@@ -44,8 +44,7 @@ class MultiVoiceTTSModal extends Modal {
         settingsLink.addEventListener('click', (e) => {
             e.preventDefault();
             this.close();
-            this.plugin.app.setting.open();
-            this.plugin.app.setting.openTabById('obsidian-elevenlabs-tts');
+            this.plugin.app.setting.open('obsidian-elevenlabs-tts');
         });
 
         new Setting(contentEl)
