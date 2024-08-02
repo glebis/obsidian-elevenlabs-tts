@@ -17,6 +17,51 @@ interface ElevenLabsTTSSettings {
     outputTextPreview: boolean;
 }
 
+class MultiVoiceTTSModal extends Modal {
+    plugin: ElevenLabsTTSPlugin;
+    text: string;
+    textComponent: TextComponent;
+
+    constructor(app: App, plugin: ElevenLabsTTSPlugin, initialText: string = '') {
+        super(app);
+        this.plugin = plugin;
+        this.text = initialText;
+    }
+
+    onOpen() {
+        const { contentEl } = this;
+
+        contentEl.createEl('h2', { text: 'Multi-Voice Text-to-Speech' });
+
+        new Setting(contentEl)
+            .setName('Text')
+            .addText(text => {
+                this.textComponent = text;
+                text.setValue(this.text)
+                    .setPlaceholder('Enter text for multi-voice TTS')
+                    .onChange(value => this.text = value);
+            });
+
+        new Setting(contentEl)
+            .addButton(btn => btn
+                .setButtonText('Generate')
+                .setCta()
+                .onClick(() => {
+                    if (this.text) {
+                        this.plugin.generateMultiVoiceAudio(this.text);
+                        this.close();
+                    } else {
+                        new Notice('Please enter text for conversion.');
+                    }
+                }));
+    }
+
+    onClose() {
+        const { contentEl } = this;
+        contentEl.empty();
+    }
+}
+
 interface SoundGenerationRequest {
     text: string;
     duration_seconds: number;
@@ -71,6 +116,15 @@ export default class ElevenLabsTTSPlugin extends Plugin {
             editorCallback: (editor, view) => {
                 const selectedText = editor.getSelection();
                 new SoundGenerationModal(this.app, this, selectedText).open();
+            }
+        });
+
+        this.addCommand({
+            id: 'multi-voice-tts',
+            name: 'Multi-Voice Text-to-Speech',
+            editorCallback: (editor, view) => {
+                const selectedText = editor.getSelection();
+                new MultiVoiceTTSModal(this.app, this, selectedText).open();
             }
         });
 
@@ -160,6 +214,128 @@ export default class ElevenLabsTTSPlugin extends Plugin {
             console.error('Error generating audio:', error);
             new Notice('Error generating audio file');
         }
+    }
+
+    async generateMultiVoiceAudio(text: string): Promise<void> {
+        if (!this.settings.apiKey) {
+            new Notice('API key not set. Please set your API key in the plugin settings.');
+            return;
+        }
+
+        try {
+            const voiceSettings: VoiceSettings = {
+                stability: this.settings.stability,
+                similarity_boost: this.settings.similarityBoost,
+            };
+
+            const voices = {
+                primary: this.settings.primaryVoice,
+                secondary: this.settings.secondaryVoice,
+                tertiary: this.settings.tertiaryVoice
+            };
+
+            const parsedContent = this.parseMarkdownContent(text);
+            let audioBuffers: ArrayBuffer[] = [];
+
+            for (const segment of parsedContent) {
+                const voiceId = voices[segment.voiceType];
+                const data: TextToSpeechRequest = {
+                    model_id: "eleven_multilingual_v2",
+                    text: segment.text.trim(),
+                    voice_settings: voiceSettings,
+                };
+
+                const requestOptions: RequestInit = {
+                    method: "POST",
+                    headers: {
+                        'Accept': "audio/mpeg",
+                        'xi-api-key': this.settings.apiKey,
+                        'Content-Type': "application/json",
+                    },
+                    body: JSON.stringify(data),
+                };
+
+                const response = await fetch(`${BASE_URL}/text-to-speech/${voiceId}`, requestOptions);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const audioData = await response.arrayBuffer();
+                audioBuffers.push(audioData);
+            }
+
+            const combinedAudioBuffer = this.combineAudioBuffers(audioBuffers);
+
+            const date = moment().format('yyyymmdd hhmmss');
+            const truncatedText = transliterate(text.slice(0, 20)).replace(/[^a-zA-Z0-9]/g, '_');
+            const fileName = `${date}_${truncatedText}_multi_voice.mp3`.toLowerCase();
+            const filePath = `${this.settings.outputFolder}/${fileName}`;
+
+            await this.app.vault.adapter.writeBinary(filePath, combinedAudioBuffer);
+
+            new Notice(`Multi-voice audio file created: ${fileName}`);
+
+            const textPreview = this.settings.outputTextPreview ? text.slice(0, 50) + (text.length > 50 ? '...' : '') : '';
+
+            if (this.settings.attachmentOption === 'daily') {
+                await this.attachToDaily(filePath, textPreview, text);
+            } else if (this.settings.attachmentOption === 'current') {
+                await this.attachToCurrent(filePath, textPreview, text);
+            }
+
+            // Play the audio if the setting is enabled
+            if (this.settings.playAudioInObsidian) {
+                const audioBlob = new Blob([combinedAudioBuffer], { type: 'audio/mpeg' });
+                const audioUrl = URL.createObjectURL(audioBlob);
+
+                const audioElement = new Audio(audioUrl);
+                audioElement.play();
+            }
+        } catch (error) {
+            console.error('Error generating multi-voice audio:', error);
+            new Notice('Error generating multi-voice audio file');
+        }
+    }
+
+    parseMarkdownContent(text: string): Array<{voiceType: 'primary' | 'secondary' | 'tertiary', text: string}> {
+        const lines = text.split('\n');
+        const parsedContent: Array<{voiceType: 'primary' | 'secondary' | 'tertiary', text: string}> = [];
+        let currentVoice: 'primary' | 'secondary' | 'tertiary' = 'primary';
+        let currentBlock = '';
+
+        for (const line of lines) {
+            if (line.startsWith('#')) {
+                if (currentBlock) {
+                    parsedContent.push({voiceType: currentVoice, text: currentBlock.trim()});
+                    currentBlock = '';
+                }
+                currentVoice = 'secondary';
+                currentBlock = line + '\n';
+            } else if (line.startsWith('>') || line.startsWith('```')) {
+                if (currentBlock) {
+                    parsedContent.push({voiceType: currentVoice, text: currentBlock.trim()});
+                    currentBlock = '';
+                }
+                currentVoice = 'tertiary';
+                currentBlock = line + '\n';
+            } else {
+                if (currentVoice !== 'primary' && !line.trim()) {
+                    if (currentBlock) {
+                        parsedContent.push({voiceType: currentVoice, text: currentBlock.trim()});
+                        currentBlock = '';
+                    }
+                    currentVoice = 'primary';
+                }
+                currentBlock += line + '\n';
+            }
+        }
+
+        if (currentBlock) {
+            parsedContent.push({voiceType: currentVoice, text: currentBlock.trim()});
+        }
+
+        return parsedContent;
     }
 
     combineAudioBuffers(buffers: ArrayBuffer[]): ArrayBuffer {
