@@ -163,12 +163,19 @@ export default class ElevenLabsTTSPlugin extends Plugin {
     }
 
     openSettings() {
-        if ('setting' in this.app && typeof this.app.setting.open === 'function') {
-            this.app.setting.open();
-            this.app.setting.openTabById(this.manifest.id);
-        } else {
+        try {
+            // @ts-ignore
+            if (this.app.setting && typeof this.app.setting.open === 'function') {
+                // @ts-ignore
+                this.app.setting.open();
+                // @ts-ignore
+                this.app.setting.openTabById(this.manifest.id);
+            } else {
+                throw new Error('Settings API not available');
+            }
+        } catch (error) {
             new Notice('Unable to open settings. Please open them manually.');
-            console.warn('Settings API not available. Unable to open settings programmatically.');
+            console.warn('Error opening settings:', error);
         }
     }
 
