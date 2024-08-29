@@ -1,10 +1,10 @@
 {
-    "id": "obsidian-elevenlabs-tts",
-    "name": "ElevenLabs Text-to-Speech",
-    "version": "1.1.0",
-    "minAppVersion": "0.12.0",
-    "description": "Generate audio from selected text using ElevenLabs API",
-    "author": "Gleb Kalinin",
-    "authorUrl": "https://github.com/glebis",
-    "isDesktopOnly": true
+  "id": "obsidian-elevenlabs-tts",
+  "name": "ElevenLabs Text-to-Speech",
+  "version": "1.1.1",
+  "minAppVersion": "0.12.0",
+  "description": "Generate audio from selected text using ElevenLabs API",
+  "author": "Gleb Kalinin",
+  "authorUrl": "https://github.com/glebis",
+  "isDesktopOnly": true
 }
