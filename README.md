@@ -57,7 +57,7 @@ Contributions to this plugin are welcome! If you encounter any issues or have su
 
 ## License
 
-This plugin is released under the [MIT License](https://opensource.org/licenses/MIT).
+This plugin is released under the GNU General Public License v3.0.
 
 ## Release Notes
 
