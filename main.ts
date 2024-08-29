@@ -527,6 +527,7 @@ class SoundGenerationModal extends Modal {
         super(app);
         this.plugin = plugin;
         this.text = initialText;
+        this.duration = 5; // Initialize duration with default value
     }
 
     onOpen() {
@@ -548,7 +549,7 @@ class SoundGenerationModal extends Modal {
             .addText(text => {
                 this.durationComponent = text;
                 text.setPlaceholder('Enter duration (0.5 - 22)')
-                    .setValue('5')
+                    .setValue(this.duration.toString())
                     .onChange(value => {
                         let duration = parseFloat(value);
                         if (!isNaN(duration)) {
@@ -556,6 +557,8 @@ class SoundGenerationModal extends Modal {
                             if (duration < 0.5) duration = 0.5;
                             this.duration = duration;
                             this.durationComponent.setValue(duration.toString());
+                        } else {
+                            this.duration = 0; // Set to invalid value if input is not a number
                         }
                     });
             });
@@ -565,14 +568,14 @@ class SoundGenerationModal extends Modal {
                 .setButtonText('Generate')
                 .setCta()
                 .onClick(() => {
-                    if (this.text && this.duration) {
+                    if (this.text && this.duration && this.duration >= 0.5 && this.duration <= 22) {
                         this.plugin.generateSound({
                             text: this.text,
                             duration_seconds: this.duration
                         });
                         this.close();
                     } else {
-                        new Notice('Please enter both text and a valid duration.');
+                        new Notice('Please enter both text and a valid duration (between 0.5 and 22 seconds).');
                     }
                 }));
     }
