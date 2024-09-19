@@ -527,17 +527,32 @@ export default class ElevenLabsTTSPlugin extends Plugin {
     }
 
     async processTextByRoles(text: string): Promise<void> {
-        const rolePattern = /^(Speaker \d+):\s*([\s\S]*?)(?=\n(?:Speaker \d+:|$))/gm;
-        let match;
+        const lines = text.split('\n');
         const audioBuffers: ArrayBuffer[] = [];
+        let currentRole = '';
+        let currentSpeech = '';
 
-        while ((match = rolePattern.exec(text)) !== null) {
-            const [, role, speech] = match;
-            const voiceId = this.settings.roleVoices[role] || this.settings.primaryVoice;
+        const processCurrentSpeech = async () => {
+            if (currentRole && currentSpeech.trim()) {
+                const voiceId = this.settings.roleVoices[currentRole] || this.settings.primaryVoice;
+                const audioData = await this.generateAudioForRole(currentSpeech.trim(), voiceId);
+                audioBuffers.push(audioData);
+            }
+        };
 
-            const audioData = await this.generateAudioForRole(speech.trim(), voiceId);
-            audioBuffers.push(audioData);
+        for (const line of lines) {
+            const roleMatch = line.match(/^(Speaker \d+):\s*(.*)/);
+            if (roleMatch) {
+                await processCurrentSpeech();
+                currentRole = roleMatch[1];
+                currentSpeech = roleMatch[2] + '\n';
+            } else {
+                currentSpeech += line + '\n';
+            }
         }
+
+        // Process the last speech segment
+        await processCurrentSpeech();
 
         const combinedAudioBuffer = this.combineAudioBuffers(audioBuffers);
 
