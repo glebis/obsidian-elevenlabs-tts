@@ -15,6 +15,7 @@ interface ElevenLabsTTSSettings {
     similarityBoost: number;
     playAudioInObsidian: boolean;
     outputTextPreview: boolean;
+    roleVoices: { [key: string]: string };
 }
 
 class MultiVoiceTTSModal extends Modal {
@@ -148,6 +149,15 @@ export default class ElevenLabsTTSPlugin extends Plugin {
             editorCallback: (editor, view) => {
                 const selectedText = editor.getSelection();
                 new MultiVoiceTTSModal(this.app, this, selectedText).open();
+            }
+        });
+
+        this.addCommand({
+            id: 'read-by-roles',
+            name: 'Read by Roles',
+            editorCallback: (editor, view) => {
+                const selectedText = editor.getSelection();
+                new ReadByRolesModal(this.app, this, selectedText).open();
             }
         });
 
@@ -514,6 +524,124 @@ export default class ElevenLabsTTSPlugin extends Plugin {
             new Notice('Error generating sound file');
         }
     }
+
+    async processTextByRoles(text: string): Promise<void> {
+        const rolePattern = /^(Speaker \d+):\s*([\s\S]*?)(?=\n(?:Speaker \d+:|$))/gm;
+        let match;
+        const audioBuffers: ArrayBuffer[] = [];
+
+        while ((match = rolePattern.exec(text)) !== null) {
+            const [, role, speech] = match;
+            const voiceId = this.settings.roleVoices[role] || this.settings.primaryVoice;
+
+            const audioData = await this.generateAudioForRole(speech.trim(), voiceId);
+            audioBuffers.push(audioData);
+        }
+
+        const combinedAudioBuffer = this.combineAudioBuffers(audioBuffers);
+
+        const date = moment().format('yyyymmdd hhmmss');
+        const truncatedText = transliterate(text.slice(0, 20)).replace(/[^a-zA-Z0-9]/g, '_');
+        const fileName = `${date}_${truncatedText}_roles.mp3`.toLowerCase();
+        const filePath = `${this.settings.outputFolder}/${fileName}`;
+
+        await this.app.vault.adapter.writeBinary(filePath, combinedAudioBuffer);
+
+        new Notice(`Podcast file created: ${fileName}`);
+
+        if (this.settings.attachmentOption === 'daily') {
+            await this.attachToDaily(filePath, '', text);
+        } else if (this.settings.attachmentOption === 'current') {
+            await this.attachToCurrent(filePath, '', text);
+        }
+
+        if (this.settings.playAudioInObsidian) {
+            const audioBlob = new Blob([combinedAudioBuffer], { type: 'audio/mpeg' });
+            const audioUrl = URL.createObjectURL(audioBlob);
+
+            const audioElement = new Audio(audioUrl);
+            audioElement.play();
+        }
+    }
+
+    async generateAudioForRole(text: string, voiceId: string): Promise<ArrayBuffer> {
+        const voiceSettings: VoiceSettings = {
+            stability: this.settings.stability,
+            similarity_boost: this.settings.similarityBoost,
+        };
+
+        const data: TextToSpeechRequest = {
+            model_id: "eleven_multilingual_v2",
+            text: text,
+            voice_settings: voiceSettings,
+        };
+
+        const requestOptions: RequestInit = {
+            method: "POST",
+            headers: {
+                'Accept': "audio/mpeg",
+                'xi-api-key': this.settings.apiKey,
+                'Content-Type': "application/json",
+            },
+            body: JSON.stringify(data),
+        };
+
+        const response = await fetch(`${BASE_URL}/text-to-speech/${voiceId}`, requestOptions);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        return await response.arrayBuffer();
+    }
+}
+
+class ReadByRolesModal extends Modal {
+    plugin: ElevenLabsTTSPlugin;
+    text: string;
+    textComponent: TextAreaComponent;
+
+    constructor(app: App, plugin: ElevenLabsTTSPlugin, initialText: string = '') {
+        super(app);
+        this.plugin = plugin;
+        this.text = initialText;
+    }
+
+    onOpen() {
+        const { contentEl } = this;
+
+        contentEl.createEl('h2', { text: 'Read by Roles' });
+
+        new Setting(contentEl)
+            .setName('Text')
+            .setDesc('Enter your text here. Format: "Speaker X: [speech]"')
+            .addTextArea(text => {
+                this.textComponent = text;
+                text.setValue(this.text)
+                    .setPlaceholder('Speaker 1: Hello\nSpeaker 2: Hi there\nSpeaker 1: How are you?')
+                    .onChange(value => this.text = value);
+                text.inputEl.rows = 10;
+                text.inputEl.cols = 50;
+            });
+
+        new Setting(contentEl)
+            .addButton(btn => btn
+                .setButtonText('Generate')
+                .setCta()
+                .onClick(() => {
+                    if (this.text) {
+                        this.plugin.processTextByRoles(this.text);
+                        this.close();
+                    } else {
+                        new Notice('Please enter text for conversion.');
+                    }
+                }));
+    }
+
+    onClose() {
+        const { contentEl } = this;
+        contentEl.empty();
+    }
 }
 
 class SoundGenerationModal extends Modal {
@@ -620,6 +748,37 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
         let audio: HTMLAudioElement | null = null;
 
         const createVoiceSetting = (containerEl: HTMLElement, settingName: string, settingKey: 'primaryVoice' | 'secondaryVoice' | 'tertiaryVoice') => {
+            // ... (keep the existing createVoiceSetting function)
+        };
+
+        // ... (keep the existing voice settings)
+
+        // Add role voice settings
+        containerEl.createEl('h3', { text: 'Role Voices' });
+
+        const roleVoices = ['Speaker 1', 'Speaker 2', 'Speaker 3'];
+        roleVoices.forEach(role => {
+            new Setting(containerEl)
+                .setName(`${role} Voice`)
+                .setDesc(`Select the voice for ${role}`)
+                .addDropdown(async (dropdown) => {
+                    const voices = await this.fetchVoices();
+                    voices.forEach((voice: any) => {
+                        const voiceName = voice.labels?.accent ? `${voice.name} (${voice.labels.accent})` : voice.name;
+                        dropdown.addOption(voice.voice_id, voiceName);
+                    });
+                    dropdown.setValue(this.plugin.settings.roleVoices[role] || this.plugin.settings.primaryVoice);
+                    dropdown.onChange(async (value) => {
+                        if (!this.plugin.settings.roleVoices) {
+                            this.plugin.settings.roleVoices = {};
+                        }
+                        this.plugin.settings.roleVoices[role] = value;
+                        await this.plugin.saveSettings();
+                    });
+                });
+        });
+
+        // ... (keep the rest of the settings)
             const voiceSetting = new Setting(containerEl)
                 .setName(`${settingName} Voice`)
                 .setDesc(`Select the ${settingName.toLowerCase()} voice to use. ${
