@@ -970,9 +970,9 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
         affiliateDiv.style.textAlign = 'center';
     }
 
-    voices: any[] = [];
+    private voices: any[] = [];
 
-    async fetchVoices(): Promise<any[]> {
+    private async fetchVoices(): Promise<any[]> {
         try {
             const response = await fetch(`${BASE_URL}/voices`, {
                 method: "GET",
@@ -997,7 +997,7 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
         }
     }
 
-    getVoiceCharacteristics(voiceId: string): string {
+    private getVoiceCharacteristics(voiceId: string): string {
         const voice = this.voices.find(v => v.voice_id === voiceId);
         if (voice) {
             const characteristics = [];
@@ -1009,7 +1009,7 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
         return '';
     }
 
-    updateVoiceInfo(voiceId: string, voiceSetting: Setting): void {
+    private updateVoiceInfo(voiceId: string, voiceSetting: Setting): void {
         const voiceCharacteristics = this.getVoiceCharacteristics(voiceId);
         const characteristicsEl = voiceSetting.descEl.querySelector('div');
         if (characteristicsEl) {
@@ -1018,7 +1018,7 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
         }
     }
 
-    updatePreviewButton(voiceId: string, previewButton: ButtonComponent | HTMLElement): void {
+    private updatePreviewButton(voiceId: string, previewButton: ButtonComponent | HTMLElement): void {
         const voice = this.voices.find(v => v.voice_id === voiceId);
         if (previewButton instanceof ButtonComponent) {
             previewButton.setDisabled(!voice || !voice.preview_url);
@@ -1027,7 +1027,7 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
         }
     }
 
-    async playVoicePreview(voiceId: string, previewButton: ButtonComponent | HTMLElement): Promise<void> {
+    private async playVoicePreview(voiceId: string, previewButton: ButtonComponent | HTMLElement): Promise<void> {
         const voice = this.voices.find(v => v.voice_id === voiceId);
         if (voice && voice.preview_url) {
             const audio = new Audio(voice.preview_url);
@@ -1048,6 +1048,8 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
         }
     }
 }
+
+class FolderSuggestModal extends FuzzySuggestModal<TFolder> {
 
 class FolderSuggestModal extends FuzzySuggestModal<TFolder> {
     onChooseItem: (folder: TFolder) => void;
