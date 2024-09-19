@@ -98,7 +98,8 @@ const DEFAULT_SETTINGS: ElevenLabsTTSSettings = {
     stability: 0.5,
     similarityBoost: 0.5,
     playAudioInObsidian: true,
-    outputTextPreview: true
+    outputTextPreview: true,
+    roleVoices: {}
 }
 
 const BASE_URL = "https://api.elevenlabs.io/v1";
