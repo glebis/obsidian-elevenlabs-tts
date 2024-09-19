@@ -748,10 +748,66 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
         let audio: HTMLAudioElement | null = null;
 
         const createVoiceSetting = (containerEl: HTMLElement, settingName: string, settingKey: 'primaryVoice' | 'secondaryVoice' | 'tertiaryVoice') => {
-            // ... (keep the existing createVoiceSetting function)
+            const voiceSetting = new Setting(containerEl)
+                .setName(`${settingName} Voice`)
+                .setDesc(`Select the ${settingName.toLowerCase()} voice to use. ${
+                    settingKey === 'primaryVoice' ? 'Used for regular text.' :
+                    settingKey === 'secondaryVoice' ? 'Used for headers.' :
+                    'Used for quotes, code blocks, and callouts.'
+                }`)
+                .addDropdown(async (dropdown) => {
+                    const voices = await this.fetchVoices();
+                    voices.forEach((voice: any) => {
+                        const voiceName = voice.labels?.accent ? `${voice.name} (${voice.labels.accent})` : voice.name;
+                        dropdown.addOption(voice.voice_id, voiceName);
+                        this.voiceLanguages.set(voice.voice_id, voice.labels.language);
+                    });
+                    dropdown.setValue(this.plugin.settings[settingKey]);
+                    dropdown.onChange(async (value) => {
+                        this.plugin.settings[settingKey] = value;
+                        await this.plugin.saveSettings();
+                        this.updateVoiceInfo(value, voiceSetting);
+                        this.updatePreviewButton(value, voiceSetting.controlEl.querySelector('.play-button') as HTMLElement);
+                        if (audio) {
+                            audio.pause();
+                            audio = null;
+                        }
+                        setIcon(voiceSetting.controlEl.querySelector('.play-button') as HTMLElement, 'play');
+                    });
+            
+                    // Set initial voice info
+                    this.updateVoiceInfo(this.plugin.settings[settingKey], voiceSetting);
+                });
+
+            const previewButton = new ButtonComponent(voiceSetting.controlEl)
+                .setIcon('play')
+                .setClass('play-button')
+                .onClick(() => {
+                    if (audio && !audio.paused) {
+                        audio.pause();
+                        setIcon(previewButton.buttonEl, 'play');
+                    } else {
+                        this.playVoicePreview(this.plugin.settings[settingKey], previewButton.buttonEl);
+                    }
+                });
+
+            this.updatePreviewButton(this.plugin.settings[settingKey], previewButton.buttonEl);
+
+            // Add voice characteristics directly under the dropdown and play button
+            const characteristicsEl = voiceSetting.descEl.createDiv();
+            characteristicsEl.setText(this.getVoiceCharacteristics(this.plugin.settings[settingKey]));
+
+            return { voiceSetting, previewButton };
         };
 
-        // ... (keep the existing voice settings)
+        const { voiceSetting: primaryVoiceSetting, previewButton: primaryPreviewBtn } = createVoiceSetting(containerEl, 'Primary', 'primaryVoice');
+        primaryPreviewButton = primaryPreviewBtn;
+
+        const { voiceSetting: secondaryVoiceSetting, previewButton: secondaryPreviewBtn } = createVoiceSetting(containerEl, 'Secondary', 'secondaryVoice');
+        secondaryPreviewButton = secondaryPreviewBtn;
+
+        const { voiceSetting: tertiaryVoiceSetting, previewButton: tertiaryPreviewBtn } = createVoiceSetting(containerEl, 'Tertiary', 'tertiaryVoice');
+        tertiaryPreviewButton = tertiaryPreviewBtn;
 
         // Add role voice settings
         containerEl.createEl('h3', { text: 'Role Voices' });
@@ -777,8 +833,6 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
                     });
                 });
         });
-
-        // ... (keep the rest of the settings)
             const voiceSetting = new Setting(containerEl)
                 .setName(`${settingName} Voice`)
                 .setDesc(`Select the ${settingName.toLowerCase()} voice to use. ${
