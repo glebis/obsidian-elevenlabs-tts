@@ -1047,10 +1047,6 @@ class ElevenLabsTTSSettingTab extends PluginSettingTab {
 }
 
 class FolderSuggestModal extends FuzzySuggestModal<TFolder> {
-
-class FolderSuggestModal extends FuzzySuggestModal<TFolder> {
-
-class FolderSuggestModal extends FuzzySuggestModal<TFolder> {
     onChooseItem: (folder: TFolder) => void;
 
     constructor(app: App, onChooseItem: (folder: TFolder) => void) {
